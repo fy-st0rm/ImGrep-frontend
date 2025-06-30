@@ -11,7 +11,6 @@ class ImageLoader extends ChangeNotifier {
   bool _isLoading = false;
   bool _hasMoreImages = true;
   int _currentPage = 0;
-  String? _error;
 
   ImageLoader(this._repository);
 
@@ -21,8 +20,6 @@ class ImageLoader extends ChangeNotifier {
   bool get isEmpty => _images.isEmpty;
   bool get isLoading => _isLoading;
   bool get hasMoreImages => _hasMoreImages;
-  String? get error => _error;
-  bool get hasError => _error != null;
 
   // Thumbnail cache methods
   Uint8List? getCachedThumbnail(String key) => _thumbnailCache[key];
@@ -33,8 +30,6 @@ class ImageLoader extends ChangeNotifier {
   Future<void> initialize() async {
     if (_isLoading) return;
 
-    _clearError();
-
     try {
       final hasImages = await _repository.hasImages();
       if (!hasImages) {
@@ -44,7 +39,6 @@ class ImageLoader extends ChangeNotifier {
 
       await loadMoreImages();
     } catch (e) {
-      _setError('Failed to initialize: $e');
       Dbg.e('Error initializing images: $e');
     }
   }
@@ -54,7 +48,6 @@ class ImageLoader extends ChangeNotifier {
     if (_isLoading || !_hasMoreImages) return;
 
     _isLoading = true;
-    _clearError();
 
     try {
       final newImages = await _repository.getImages(page: _currentPage);
@@ -66,7 +59,6 @@ class ImageLoader extends ChangeNotifier {
         _currentPage++;
       }
     } catch (e) {
-      _setError('Failed to load images: $e');
       Dbg.e('Error loading images: $e');
     } finally {
       _isLoading = false;
@@ -87,16 +79,8 @@ class ImageLoader extends ChangeNotifier {
     _currentPage = 0;
     _hasMoreImages = true;
     _isLoading = false;
-    _clearError();
     _repository.clearCache();
   }
-
-  void _setError(String error) {
-    _error = error;
-    notifyListeners();
-  }
-
-  void _clearError() => _error = null;
 
   @override
   void dispose() {
