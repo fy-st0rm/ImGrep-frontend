@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:imgrep/pages/story_view.dart';
 import 'package:imgrep/widgets/yearly_higlights.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:intl/intl.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
+import 'package:imgrep/utils/debug_logger.dart' show Dbg;
 
 class Story {
   final String title;
@@ -14,8 +16,9 @@ class Story {
 Future<List<Story>> generateStoriesByMonthOnly() async {
   final PermissionState ps = await PhotoManager.requestPermissionExtend();
   if (!ps.isAuth) {
-    PhotoManager.openSetting();
-    return [];
+    Dbg.e(
+      ps.hasAccess ? "Limited photo access granted" : "Photo permission denied",
+    );
   }
 
   final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
@@ -38,7 +41,6 @@ Future<List<Story>> generateStoriesByMonthOnly() async {
     allAssets.addAll(page);
   }
 
-  final now = DateTime.now();
   Map<String, List<AssetEntity>> storyGroups = {};
 
   for (AssetEntity asset in allAssets) {
@@ -85,7 +87,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   List<Story> stories = [];
 
   bool isLoading = true;
-   AssetPathEntity? album;
+  AssetPathEntity? album;
 
   @override
   void initState() {
@@ -93,7 +95,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     loadStories();
   }
 
-   Future<void> loadStories() async {
+  Future<void> loadStories() async {
     final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
       type: RequestType.image,
       onlyAll: true,
@@ -109,75 +111,116 @@ class _LibraryScreenState extends State<LibraryScreen> {
       isLoading = false;
     });
   }
+
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: Colors.black,
-      body: isLoading
-    ? const Center(child: CircularProgressIndicator())
-    : SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ListView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: stories.length,
-              itemBuilder: (context, index) {
-                final story = stories[index];
-                final cover = story.assets.first;
-                final description = generateStoryDescription(
-                    story.title, story.assets.length);
-
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                       Text(
-                        story.title,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+      body:
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GridView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                      Padding(
-                        padding: EdgeInsets.only(bottom: 10),
-                        child:Text(
-                        description,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      ),
-                      AspectRatio(
-                        aspectRatio: 3 / 2,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: AssetEntityImage(
-                            cover,
-                            isOriginal: false,
-                            fit: BoxFit.cover,
+                      itemCount: stories.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 0.8,
                           ),
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemBuilder: (context, index) {
+                        final story = stories[index];
+                        final cover = story.assets.first;
+                        final description = generateStoryDescription(
+                          story.title,
+                          story.assets.length,
+                        );
 
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                     
-                    ],
-                  ),
-                );
-              },
-            ),
-             if (album != null) YearHighlightsWidget(album: album!),
-                  const SizedBox(height: 20),
-          ],
-        ),
-      ),
-      
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => StoryViewPage(
+                                      title: story.title,
+                                      assets: story.assets,
+                                    ),
+                              ),
+                            );
+                          },
+                          child: Card(
+                            color: Colors.black,
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AspectRatio(
+                                  aspectRatio: 3 / 2,
+                                  child: ClipRRect(
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(16),
+                                      topRight: Radius.circular(16),
+                                    ),
+                                    child: AssetEntityImage(
+                                      cover,
+                                      isOriginal: false,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        story.title,
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        description,
+                                        maxLines: 3,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+
+                    if (album != null) YearHighlightsWidget(album: album!),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
     );
   }
 }
