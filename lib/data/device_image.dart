@@ -4,19 +4,26 @@ import 'package:imgrep/utils/settings.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 class DeviceImageSource implements ImageSource {
-  AssetPathEntity? _cachedMainAlbum;
+  List<AssetPathEntity>? _cachedAlbums;
 
   @override
-  Future<List<dynamic>> getImages({int page = 0, int? size}) async {
+  Future<List<AssetEntity>> getImages({int page = 0, int? size}) async {
     try {
-      final album = await _getMainAlbum();
-      if (album == null) return [];
-      return await album.getAssetListPaged(
-        page: page,
-        size: size ?? HomeScreenSettings.pageSize,
-      );
+      final albums = await _getAlbums();
+
+      final List<AssetEntity> allImages = [];
+
+      for (var album in albums) {
+        final images = await album.getAssetListPaged(
+          page: page,
+          size: size ?? HomeScreenSettings.pageSize,
+        );
+        allImages.addAll(images);
+      }
+
+      return allImages;
     } catch (e) {
-      Dbg.e('Error loading device images: $e');
+      Dbg.e('Error loading all device images: $e');
       return [];
     }
   }
@@ -24,8 +31,12 @@ class DeviceImageSource implements ImageSource {
   @override
   Future<bool> hasImages() async {
     try {
-      final album = await _getMainAlbum();
-      return album != null && await album.assetCountAsync > 0;
+      final albums = await PhotoManager.getAssetPathList(
+        type: RequestType.image,
+        onlyAll: true,
+      );
+      if (albums.isEmpty) return false;
+      return await albums.first.assetCountAsync > 0;
     } catch (e) {
       Dbg.e('Error checking device images: $e');
       return false;
@@ -33,29 +44,19 @@ class DeviceImageSource implements ImageSource {
   }
 
   @override
-  void clearCache() => _cachedMainAlbum = null;
+  void clearCache() => _cachedAlbums = null;
 
-  Future<AssetPathEntity?> _getMainAlbum() async {
-    if (_cachedMainAlbum != null) return _cachedMainAlbum;
+  Future<List<AssetPathEntity>> _getAlbums() async {
+    if (_cachedAlbums != null) return _cachedAlbums!;
     try {
       final albums = await PhotoManager.getAssetPathList(
         type: RequestType.image,
       );
-      if (albums.isEmpty) return null;
-      AssetPathEntity? mainAlbum;
-      int maxCount = 0;
-      for (var album in albums) {
-        final count = await album.assetCountAsync;
-        if (count > maxCount) {
-          maxCount = count;
-          mainAlbum = album;
-        }
-      }
-      _cachedMainAlbum = mainAlbum;
-      return mainAlbum;
+      _cachedAlbums = albums;
+      return albums;
     } catch (e) {
-      Dbg.e('Error finding main album: $e');
-      return null;
+      Dbg.e('Error loading albums: $e');
+      return [];
     }
   }
 }
