@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:imgrep/pages/get_started.dart';
 import 'package:imgrep/pages/loading.dart';
-import 'package:imgrep/utils/initial_route_controller.dart';
+import 'package:imgrep/pages/splashscreen.dart';
 
 void main() {
   runApp(const App());
@@ -26,7 +26,7 @@ class App extends StatelessWidget {
 
       initialRoute: '/',
       routes: {
-        '/': (context) => InitialRouteController(),
+        '/': (context) => Splashscreen(),
         'loading': (context) => Loading(),
         'getStarted': (context) => Getstarted(),
       },
