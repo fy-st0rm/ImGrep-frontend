@@ -13,6 +13,7 @@ class YearHighlightsWidget extends StatefulWidget {
 
 class _YearHighlightsWidgetState extends State<YearHighlightsWidget> {
   List<AssetEntity> highlights = [];
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -41,18 +42,25 @@ class _YearHighlightsWidgetState extends State<YearHighlightsWidget> {
         }
       }
 
-      // Stop early if we have enough
       if (olderAssets.length >= 100) break;
     }
 
     olderAssets.shuffle();
     setState(() {
-      highlights = olderAssets.take(20 ).toList();
+      highlights = olderAssets.take(20).toList();
+      isLoading = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     if (highlights.isEmpty) return const SizedBox();
 
     return Column(
