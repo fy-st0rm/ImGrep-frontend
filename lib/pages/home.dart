@@ -110,29 +110,6 @@ class PermissionStatusWidget extends StatelessWidget {
         ),
       );
     }
-
-    if (imageLoader.hasError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              imageLoader.error ?? "Unknown error",
-              style: const TextStyle(color: Colors.white, fontSize: 18),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: imageLoader.refresh,
-              child: const Text("Retry"),
-            ),
-          ],
-        ),
-      );
-    }
-
     if (imageLoader.isEmpty) {
       return const Center(
         child: Column(
