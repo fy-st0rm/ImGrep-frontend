@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (Platform.isAndroid) {
         // Request permissions first
         final PermissionState ps = await PhotoManager.requestPermissionExtend();
-        if (ps.isAuth) {
+        if (ps.hasAccess) {
           await _imageLoader.initialize();
         } else {
           // Handle permission denied

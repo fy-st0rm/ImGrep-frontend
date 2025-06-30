@@ -15,7 +15,7 @@ class Story {
 
 Future<List<Story>> generateStoriesByMonthOnly() async {
   final PermissionState ps = await PhotoManager.requestPermissionExtend();
-  if (!ps.isAuth) {
+  if (!ps.hasAccess) {
     Dbg.e(
       ps.hasAccess ? "Limited photo access granted" : "Photo permission denied",
     );
