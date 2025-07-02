@@ -34,9 +34,8 @@ class ImageGrid extends StatelessWidget {
         crossAxisSpacing: 2,
       ),
       itemBuilder: (context, index) {
-        if (index >= imageLoader.imageCount) {
-          return const LoadingTile();
-        }
+        if (index >= imageLoader.imageCount) return const LoadingTile();
+
         return ImageTile(
           image: imageLoader.images[index],
           imageLoader: imageLoader,
@@ -54,12 +53,12 @@ class ImageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (image is String) return _AssetImageTile(path: image);
+
     if (image is AssetEntity) {
       return _DeviceImageTile(asset: image, imageLoader: imageLoader);
     }
-    if (image is String) {
-      return _AssetImageTile(path: image);
-    }
+
     return const ErrorTile();
   }
 }

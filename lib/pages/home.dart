@@ -1,8 +1,6 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:imgrep/controllers/image_loader.dart';
-import 'package:imgrep/data/image_repository.dart';
 import 'package:imgrep/utils/debug_logger.dart' show Dbg;
 import 'package:imgrep/widgets/image_widgets.dart';
 import 'package:photo_manager/photo_manager.dart';
@@ -21,7 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _imageLoader = ImageLoader(ImageRepository());
+    _imageLoader = ImageLoader();
     _initialize();
   }
 
