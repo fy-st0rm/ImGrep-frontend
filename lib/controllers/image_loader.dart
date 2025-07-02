@@ -1,10 +1,18 @@
 import 'package:flutter/foundation.dart';
-import 'package:imgrep/data/image_repository.dart';
+import 'package:imgrep/data/asset_image.dart';
+import 'package:imgrep/data/device_image.dart';
+import 'package:imgrep/utils/settings.dart';
 import 'package:imgrep/utils/debug_logger.dart';
+
+abstract class ImageSource {
+  Future<List<dynamic>> getImages({int page = 0, int? size});
+  Future<bool> hasImages();
+  void clearCache();
+}
 
 /// Handles all image loading logic and state management
 class ImageLoader extends ChangeNotifier {
-  final ImageRepository _repository;
+  final ImageSource _source;
   final List<dynamic> _images = [];
   final Map<String, Uint8List> _thumbnailCache = {};
 
@@ -12,7 +20,11 @@ class ImageLoader extends ChangeNotifier {
   bool _hasMoreImages = true;
   int _currentPage = 0;
 
-  ImageLoader(this._repository);
+  ImageLoader()
+    : _source =
+          HomeScreenSettings.useDeviceImages
+              ? DeviceImageSource()
+              : AssetImageSource();
 
   // Getters
   List<dynamic> get images => _images;
@@ -31,7 +43,7 @@ class ImageLoader extends ChangeNotifier {
     if (_isLoading) return;
 
     try {
-      final hasImages = await _repository.hasImages();
+      final hasImages = await _source.hasImages();
       if (!hasImages) {
         _hasMoreImages = false;
         return;
@@ -48,10 +60,10 @@ class ImageLoader extends ChangeNotifier {
     if (_isLoading || !_hasMoreImages) return;
 
     _isLoading = true;
+    notifyListeners();
 
     try {
-      final newImages = await _repository.getImages(page: _currentPage);
-
+      final newImages = await _source.getImages(page: _currentPage);
       if (newImages.isEmpty) {
         _hasMoreImages = false;
       } else {
@@ -79,7 +91,8 @@ class ImageLoader extends ChangeNotifier {
     _currentPage = 0;
     _hasMoreImages = true;
     _isLoading = false;
-    _repository.clearCache();
+    _source.clearCache();
+    notifyListeners();
   }
 
   @override

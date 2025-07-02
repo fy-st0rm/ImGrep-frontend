@@ -2,7 +2,7 @@ import 'dart:io';
 
 class HomeScreenSettings {
   static final bool useDeviceImages = Platform.isAndroid;
-  static const int pageSize = 30;
+  static const int pageSize = 64;
   static const String assetImagesDir = 'assets/images/';
   static const List<String> supportedExtensions = [
     '.jpg',

@@ -1,5 +1,5 @@
 import 'package:flutter/services.dart';
-import 'package:imgrep/data/image_repository.dart';
+import 'package:imgrep/controllers/image_loader.dart';
 import 'package:imgrep/utils/debug_logger.dart';
 import 'package:imgrep/utils/settings.dart';
 import 'dart:convert';
