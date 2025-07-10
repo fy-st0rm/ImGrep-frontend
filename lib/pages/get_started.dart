@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:imgrep/pages/home.dart';
+import 'package:imgrep/pages/splashscreen.dart';
+import 'package:imgrep/services/image_service.dart';
 
 final String description1 =
     "ImGrep is your AI-powered visual search companion — built to make sense of the images around you. In a world overflowing with digital content, ImGrep helps you cut through the noise and find what matters.";
@@ -7,6 +8,16 @@ final String description2 = "It doesn't just look at images — it looks into th
 
 class Getstarted extends StatelessWidget {
   const Getstarted({super.key});
+
+  void onGetStarted(BuildContext context) {
+    // NOTE(slok): Moving to splash screen after the get started page.
+    // Did this to utilize the splash screen as a loading page for syncing the database
+    // If this is not natural might have to change it later
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => SplashScreen(syncDatabase: true)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,13 +76,7 @@ class Getstarted extends StatelessWidget {
               ],
             ),
             GestureDetector(
-              onTap:
-                  () => {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => HomeScreen()),
-                    ),
-                  },
+              onTap: () => onGetStarted(context),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,

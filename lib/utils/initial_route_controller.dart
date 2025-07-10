@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:imgrep/pages/get_started.dart';
-import 'package:imgrep/pages/main_layout.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:imgrep/pages/get_started.dart';
+import 'package:imgrep/pages/splashscreen.dart';
 
 class InitialRouteController extends StatefulWidget {
   const InitialRouteController({super.key});
@@ -38,6 +38,6 @@ class InitialRouteControllerState extends State<InitialRouteController> {
     if (_isLoading) {
       return Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    return _seenGetStarted ? MainLayout() : Getstarted();
+    return _seenGetStarted ? SplashScreen() : Getstarted();
   }
 }

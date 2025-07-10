@@ -2,8 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:imgrep/pages/get_started.dart';
 import 'package:imgrep/pages/loading.dart';
 import 'package:imgrep/pages/splashscreen.dart';
+import 'package:imgrep/utils/initial_route_controller.dart';
+import 'package:imgrep/services/image_service.dart';
+import 'package:imgrep/services/database_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initializing our services
+  await DatabaseService.init();
+  await ImageService.init();
+
   runApp(const App());
 }
 
@@ -26,7 +35,7 @@ class App extends StatelessWidget {
 
       initialRoute: '/',
       routes: {
-        '/': (context) => Splashscreen(),
+        '/': (context) => InitialRouteController(),
         'loading': (context) => Loading(),
         'getStarted': (context) => Getstarted(),
       },
