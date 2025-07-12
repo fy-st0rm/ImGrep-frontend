@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:imgrep/pages/library.dart';
+import 'package:intl/intl.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:imgrep/utils/debug_logger.dart';
 import 'package:imgrep/services/database_service.dart';
@@ -38,7 +40,6 @@ class ImageService {
     return _thumbnails[id];
   }
 
-
   /*
    * Initializes the permissions for the image handling
    * And also starts the gallery listening channel
@@ -47,12 +48,13 @@ class ImageService {
   static Future<void> init() async {
     _ps = await PhotoManager.requestPermissionExtend();
     if (!_ps.hasAccess) {
-      Dbg.e("Photo permission denied, Stoping further initialization of ImageService");
+      Dbg.e(
+        "Photo permission denied, Stoping further initialization of ImageService",
+      );
       return;
     }
     ImageService._listen();
   }
-
 
   /*
    * Function that handles the event from gallery
@@ -78,10 +80,8 @@ class ImageService {
         // Deleting the image from the database
         await DatabaseService.deleteImage(id);
       }
-
       // Handling update of image
       else if (type == "UPDATE" && id != null) {
-
         // Loading the thumbnail for the new/updated image
         final AssetEntity? asset = await AssetEntity.fromId(id);
 
@@ -90,7 +90,9 @@ class ImageService {
           return;
         }
 
-        final Uint8List? thumbnailData = await asset.thumbnailDataWithSize(const ThumbnailSize(200, 200));
+        final Uint8List? thumbnailData = await asset.thumbnailDataWithSize(
+          const ThumbnailSize(200, 200),
+        );
         if (thumbnailData == null) {
           Dbg.e("Failed to load thumbnail data of id: $id");
           return;
@@ -111,7 +113,6 @@ class ImageService {
     }
   }
 
-
   // Gallery event listener
   static void _listen() {
     _channel.receiveBroadcastStream().listen((event) {
@@ -120,14 +121,12 @@ class ImageService {
     });
   }
 
-
   /*
    * Function to collect all the images from gallery and stores in the database
    * This only occurs once we install this application
    */
 
   static Future<void> syncGalleryImages() async {
-
     // Loading a single album with all of the images from device
     final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
       type: RequestType.image,
@@ -140,11 +139,14 @@ class ImageService {
     // Getting the list of images from album
     final List<AssetEntity> images = await album.getAssetListRange(
       start: 0,
-      end: maxAssets
+      end: maxAssets,
     );
 
     // Storing it into the database
-    final List<List<AssetEntity>> batches = chunkList(images, Settings.batchSize);
+    final List<List<AssetEntity>> batches = chunkList(
+      images,
+      Settings.batchSize,
+    );
     int i = 1;
     for (var batch in batches) {
       await DatabaseService.batchInsertImage(batch);
@@ -152,8 +154,33 @@ class ImageService {
       i += batch.length;
       syncProgressNotifier.value = i / maxAssets;
     }
-  }
 
+    final Map<String, List<AssetEntity>> groups = {};
+    for (final img in images) {
+      final date = img.createDateTime;
+      final id = DateFormat('yyyy-MM').format(date);
+      groups.putIfAbsent(id, () => []).add(img);
+    }
+
+    for (final entry in groups.entries) {
+      final List<AssetEntity> groupAssets = entry.value;
+      final title = DateFormat(
+        'MMMM yyyy',
+      ).format(groupAssets.first.createDateTime);
+      final imageIds = groupAssets.map((e) => e.id).toList();
+      final coverId = imageIds.first;
+      final description = generateStoryDescription(title, imageIds.length);
+
+      await DatabaseService.insertStory(
+        id: entry.key,
+        title: title,
+        description: description,
+        imageIds: imageIds,
+        coverImageId: coverId,
+        createdAt: groupAssets.first.createDateTime,
+      );
+    }
+  }
 
   /*
    * This function is responsible to load the image from database and store its thumbnails.
@@ -164,11 +191,13 @@ class ImageService {
     _loading = true;
 
     // Get the image ids from the database
-    final List<String> imageIds = await DatabaseService.getImagesPaginated(_currentPage, amount);
+    final List<String> imageIds = await DatabaseService.getImagesPaginated(
+      _currentPage,
+      amount,
+    );
     _currentPage += imageIds.length;
 
     for (var id in imageIds) {
-
       // Loading the full asset
       final AssetEntity? asset = await AssetEntity.fromId(id);
 
@@ -178,7 +207,9 @@ class ImageService {
       }
 
       // Creating a thumbnail from that asset
-      final Uint8List? thumbnailData = await asset.thumbnailDataWithSize(const ThumbnailSize(200, 200));
+      final Uint8List? thumbnailData = await asset.thumbnailDataWithSize(
+        const ThumbnailSize(200, 200),
+      );
       if (thumbnailData == null) {
         Dbg.e("Failed to load thumbnail data of id: $id");
         continue;
@@ -198,4 +229,3 @@ class ImageService {
     _loading = false;
   }
 }
-

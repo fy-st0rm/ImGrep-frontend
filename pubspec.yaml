@@ -36,10 +36,7 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
-    - assets/clip_text_encoder.onnx
-    - assets/clip_image_encoder.onnx
-    - assets/merges.txt
-    - assets/vocab.json
+
 
   fonts:
     - family: Poppins

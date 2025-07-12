@@ -1,59 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:imgrep/pages/story_view.dart';
+import 'package:imgrep/services/database_service.dart';
 import 'package:imgrep/widgets/yearly_higlights.dart';
 import 'package:photo_manager/photo_manager.dart';
-import 'package:intl/intl.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
-import 'package:imgrep/utils/debug_logger.dart' show Dbg;
 
 class Story {
+  final String id;
   final String title;
   final List<AssetEntity> assets;
 
-  Story({required this.title, required this.assets});
+  Story({required this.id, required this.title, required this.assets});
 }
 
-Future<List<Story>> generateStoriesByMonthOnly() async {
-  final PermissionState ps = await PhotoManager.requestPermissionExtend();
-  if (!ps.hasAccess) {
-    Dbg.e(
-      ps.hasAccess ? "Limited photo access granted" : "Photo permission denied",
-    );
+Future<List<Story>> loadStoriesFromDB() async {
+  final db = await DatabaseService.database;
+  final rows = await db.query('stories', orderBy: 'created_at DESC');
+
+  List<Story> stories = [];
+  for (final row in rows) {
+    final String title = row['title'] as String;
+    final String coverId = row['cover_image_id'] as String;
+
+    final AssetEntity? cover = await AssetEntity.fromId(coverId);
+    if (cover == null) continue;
+
+    // Load only the cover image, not full list yet
+    stories.add(Story(id: row['id'] as String, title: title, assets: [cover]));
   }
 
-  final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
-    type: RequestType.image,
-    onlyAll: true,
-  );
-
-  final AssetPathEntity album = albums.first;
-  const int maxAssets = 300; // Optional limit
-  final int total = (await album.assetCountAsync).clamp(0, maxAssets);
-
-  List<AssetEntity> allAssets = [];
-
-  const int pageSize = 100;
-  for (int i = 0; i < total; i += pageSize) {
-    final List<AssetEntity> page = await album.getAssetListPaged(
-      page: i ~/ pageSize,
-      size: pageSize,
-    );
-    allAssets.addAll(page);
-  }
-
-  Map<String, List<AssetEntity>> storyGroups = {};
-
-  for (AssetEntity asset in allAssets) {
-    final date = asset.createDateTime;
-    final String monthKey = DateFormat('MMMM yyyy').format(date);
-
-    storyGroups.putIfAbsent(monthKey, () => []);
-    storyGroups[monthKey]!.add(asset);
-  }
-
-  return storyGroups.entries.map((entry) {
-    return Story(title: entry.key, assets: entry.value);
-  }).toList();
+  return stories;
 }
 
 String generateStoryDescription(String title, int count) {
@@ -67,7 +43,7 @@ String generateStoryDescription(String title, int count) {
     "Photos that whisper stories of {title}.",
     "A glimpse into your adventures in {title}.",
     "Revisiting your {title} timeline.",
-    "{count} snapshots from your {title} days.",
+    "Snapshots from your {title} days.",
   ];
 
   final template = (templates..shuffle()).first;
@@ -95,17 +71,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
     loadStories();
   }
 
-  Future<void> loadStories() async {
-    final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
-      type: RequestType.image,
-      onlyAll: true,
-    );
-
-    if (albums.isEmpty) return;
-
-    album = albums.first;
-
-    final loadedStories = await generateStoriesByMonthOnly();
+  void loadStories() async {
+    final loadedStories = await loadStoriesFromDB();
     setState(() {
       stories = loadedStories;
       isLoading = false;
@@ -152,10 +119,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               context,
                               MaterialPageRoute(
                                 builder:
-                                    (_) => StoryViewPage(
-                                      title: story.title,
-                                      assets: story.assets,
-                                    ),
+                                    (_) => StoryViewPage(storyId: story.id),
                               ),
                             );
                           },
@@ -216,7 +180,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       },
                     ),
 
-                    if (album != null) YearHighlightsWidget(album: album!),
+                    const YearHighlightsWidget(),
                     const SizedBox(height: 20),
                   ],
                 ),

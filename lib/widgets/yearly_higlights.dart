@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:imgrep/services/database_service.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 
 class YearHighlightsWidget extends StatefulWidget {
-  final AssetPathEntity album;
-
-  const YearHighlightsWidget({super.key, required this.album});
-
+  const YearHighlightsWidget({super.key});
   @override
   State<YearHighlightsWidget> createState() => _YearHighlightsWidgetState();
 }
@@ -23,31 +21,20 @@ class _YearHighlightsWidgetState extends State<YearHighlightsWidget> {
 
   Future<void> loadHighlights() async {
     final now = DateTime.now();
-    final DateTime cutoff = DateTime(now.year - 1, now.month, now.day);
+    final lastYear = now.year - 1;
 
-    List<AssetEntity> olderAssets = [];
+    final List<String> imageIds = await DatabaseService.getHighlightsOfYear(
+      lastYear,
+    );
 
-    const int pageSize = 100;
-    final int total = await widget.album.assetCountAsync;
-
-    for (int i = 0; i < total; i += pageSize) {
-      final page = await widget.album.getAssetListPaged(
-        page: i ~/ pageSize,
-        size: pageSize,
-      );
-
-      for (var asset in page) {
-        if (asset.createDateTime.isBefore(cutoff)) {
-          olderAssets.add(asset);
-        }
-      }
-
-      if (olderAssets.length >= 100) break;
+    final List<AssetEntity> assets = [];
+    for (final id in imageIds) {
+      final asset = await AssetEntity.fromId(id);
+      if (asset != null) assets.add(asset);
     }
 
-    olderAssets.shuffle();
     setState(() {
-      highlights = olderAssets.take(20).toList();
+      highlights = assets;
       isLoading = false;
     });
   }
@@ -70,7 +57,11 @@ class _YearHighlightsWidgetState extends State<YearHighlightsWidget> {
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(
             "Highlights from Last Year",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
         ),
         SizedBox(
