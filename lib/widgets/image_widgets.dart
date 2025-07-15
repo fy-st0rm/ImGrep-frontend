@@ -1,9 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:imgrep/services/image_service.dart';
-import 'package:imgrep/utils/settings.dart';
-import 'package:imgrep/utils/debug_logger.dart';
-
 class ImageGrid extends StatelessWidget {
   final _scrollController = ScrollController();
 

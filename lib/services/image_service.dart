@@ -7,6 +7,7 @@ import 'package:imgrep/utils/debug_logger.dart';
 import 'package:imgrep/services/database_service.dart';
 import 'package:imgrep/utils/settings.dart';
 import 'package:imgrep/utils/misc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /*
  * This is a static class that is responsible for handling:
@@ -53,6 +54,8 @@ class ImageService {
       );
       return;
     }
+    await incrementalSync();
+
     ImageService._listen();
   }
 
@@ -227,5 +230,50 @@ class ImageService {
 
     // Loading is complete
     _loading = false;
+  }
+
+  static Future<void> incrementalSync() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastSyncedStr = prefs.getString('lastSyncedAt');
+    final lastSynced =
+        lastSyncedStr != null ? DateTime.tryParse(lastSyncedStr) : null;
+
+    final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
+      type: RequestType.image,
+      onlyAll: true,
+    );
+    if (albums.isEmpty) return;
+
+    final AssetPathEntity album = albums.first;
+
+    // Check only recent 100 images 
+    final List<AssetEntity> recentAssets = await album.getAssetListRange(
+      start: 0,
+      end: 100,
+    );
+
+    for (final asset in recentAssets) {
+      if (lastSynced == null || asset.createDateTime.isAfter(lastSynced)) {
+        final id = asset.id;
+
+        // Store thumbnail
+        final thumb = await asset.thumbnailDataWithSize(
+          const ThumbnailSize(200, 200),
+        );
+        if (thumb == null) continue;
+
+        _thumbnails[id] = thumb;
+
+        _imageIds.remove(id);
+        _imageIds.insert(0, id);
+
+        thumbnailCountNotifier.value = _thumbnails.length;
+        
+        await DatabaseService.insertImage(asset);
+      }
+    }
+
+    // Update last synced timestamp
+    await prefs.setString('lastSyncedAt', DateTime.now().toIso8601String());
   }
 }
