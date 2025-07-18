@@ -27,6 +27,9 @@ class DatabaseService {
           );
         ''');
         await db.execute('''
+          CREATE INDEX idx_images_modified_at ON images(modified_at);
+        ''');
+        await db.execute('''
        CREATE TABLE stories (
         id TEXT PRIMARY KEY,
         title TEXT,
