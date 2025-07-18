@@ -49,9 +49,7 @@ class ImageService {
   static Future<void> init() async {
     _ps = await PhotoManager.requestPermissionExtend();
     if (!_ps.hasAccess) {
-      Dbg.e(
-        "Photo permission denied, Stoping further initialization of ImageService",
-      );
+      Dbg.e("Photo permission denied, Stoping further initialization of ImageService");
       return;
     }
     await incrementalSync();
@@ -93,9 +91,7 @@ class ImageService {
           return;
         }
 
-        final Uint8List? thumbnailData = await asset.thumbnailDataWithSize(
-          const ThumbnailSize(200, 200),
-        );
+        final Uint8List? thumbnailData = await asset.thumbnailDataWithSize(const ThumbnailSize(200, 200));
         if (thumbnailData == null) {
           Dbg.e("Failed to load thumbnail data of id: $id");
           return;
@@ -131,25 +127,16 @@ class ImageService {
 
   static Future<void> syncGalleryImages() async {
     // Loading a single album with all of the images from device
-    final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
-      type: RequestType.image,
-      onlyAll: true,
-    );
+    final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(type: RequestType.image, onlyAll: true);
 
     final AssetPathEntity album = albums.first;
     final int maxAssets = await album.assetCountAsync;
 
     // Getting the list of images from album
-    final List<AssetEntity> images = await album.getAssetListRange(
-      start: 0,
-      end: maxAssets,
-    );
+    final List<AssetEntity> images = await album.getAssetListRange(start: 0, end: maxAssets);
 
     // Storing it into the database
-    final List<List<AssetEntity>> batches = chunkList(
-      images,
-      Settings.batchSize,
-    );
+    final List<List<AssetEntity>> batches = chunkList(images, Settings.batchSize);
     int i = 1;
     for (var batch in batches) {
       await DatabaseService.batchInsertImage(batch);
@@ -167,9 +154,7 @@ class ImageService {
 
     for (final entry in groups.entries) {
       final List<AssetEntity> groupAssets = entry.value;
-      final title = DateFormat(
-        'MMMM yyyy',
-      ).format(groupAssets.first.createDateTime);
+      final title = DateFormat('MMMM yyyy').format(groupAssets.first.createDateTime);
       final imageIds = groupAssets.map((e) => e.id).toList();
       final coverId = imageIds.first;
       final description = generateStoryDescription(title, imageIds.length);
@@ -194,10 +179,7 @@ class ImageService {
     _loading = true;
 
     // Get the image ids from the database
-    final List<String> imageIds = await DatabaseService.getImagesPaginated(
-      _currentPage,
-      amount,
-    );
+    final List<String> imageIds = await DatabaseService.getImagesPaginated(_currentPage, amount);
     _currentPage += imageIds.length;
 
     for (var id in imageIds) {
@@ -210,9 +192,7 @@ class ImageService {
       }
 
       // Creating a thumbnail from that asset
-      final Uint8List? thumbnailData = await asset.thumbnailDataWithSize(
-        const ThumbnailSize(200, 200),
-      );
+      final Uint8List? thumbnailData = await asset.thumbnailDataWithSize(const ThumbnailSize(200, 200));
       if (thumbnailData == null) {
         Dbg.e("Failed to load thumbnail data of id: $id");
         continue;
@@ -235,31 +215,22 @@ class ImageService {
   static Future<void> incrementalSync() async {
     final prefs = await SharedPreferences.getInstance();
     final lastSyncedStr = prefs.getString('lastSyncedAt');
-    final lastSynced =
-        lastSyncedStr != null ? DateTime.tryParse(lastSyncedStr) : null;
+    final lastSynced = lastSyncedStr != null ? DateTime.tryParse(lastSyncedStr) : null;
 
-    final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
-      type: RequestType.image,
-      onlyAll: true,
-    );
+    final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(type: RequestType.image, onlyAll: true);
     if (albums.isEmpty) return;
 
     final AssetPathEntity album = albums.first;
 
-    // Check only recent 100 images 
-    final List<AssetEntity> recentAssets = await album.getAssetListRange(
-      start: 0,
-      end: 100,
-    );
+    // Check only recent 100 images
+    final List<AssetEntity> recentAssets = await album.getAssetListRange(start: 0, end: 100);
 
     for (final asset in recentAssets) {
       if (lastSynced == null || asset.createDateTime.isAfter(lastSynced)) {
         final id = asset.id;
 
         // Store thumbnail
-        final thumb = await asset.thumbnailDataWithSize(
-          const ThumbnailSize(200, 200),
-        );
+        final thumb = await asset.thumbnailDataWithSize(const ThumbnailSize(200, 200));
         if (thumb == null) continue;
 
         _thumbnails[id] = thumb;
@@ -268,7 +239,7 @@ class ImageService {
         _imageIds.insert(0, id);
 
         thumbnailCountNotifier.value = _thumbnails.length;
-        
+
         await DatabaseService.insertImage(asset);
       }
     }
