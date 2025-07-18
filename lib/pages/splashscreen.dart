@@ -4,7 +4,6 @@ import 'package:lottie/lottie.dart';
 import 'package:imgrep/services/image_service.dart';
 import 'package:imgrep/pages/main_layout.dart';
 import 'package:imgrep/utils/settings.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
   final bool syncDatabase;
@@ -66,11 +65,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            Lottie.asset(
-              'assets/icons/logosplash.json',
-              height: 600,
-              width: 700,
-            ),
+            Lottie.asset('assets/icons/logosplash.json', height: 600, width: 700),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 24),
               child: Column(
@@ -80,11 +75,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   if (widget.syncDatabase) ...[
                     Text(
                       'Syncing the database',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w100,
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w100),
                     ),
                     LinearProgressIndicator(
                       value: _progress,
@@ -94,17 +85,10 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                   ],
 
-                  Text(
-                    'ImGrep',
-                    style: TextStyle(color: Colors.white, fontSize: 33),
-                  ),
+                  Text('ImGrep', style: TextStyle(color: Colors.white, fontSize: 33)),
                   Text(
                     'Powered By Lobic',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w100,
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w100),
                   ),
                 ],
               ),

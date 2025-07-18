@@ -1,5 +1,7 @@
 # Addding linux to gitignore so sadit wont nuke it next time
-linux
+
+# linux   # say that again
+.env
 
 # Miscellaneous
 *.class
@@ -15,6 +17,7 @@ linux
 .swiftpm/
 migrate_working_dir/
 *.lock
+
 
 # IntelliJ related
 *.iml
