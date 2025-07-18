@@ -1,8 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:imgrep/services/image_service.dart';
-import 'package:imgrep/utils/settings.dart';
-import 'package:imgrep/utils/debug_logger.dart';
 
 class ImageGrid extends StatelessWidget {
   final _scrollController = ScrollController();
@@ -24,7 +22,6 @@ class ImageGrid extends StatelessWidget {
       // This widget updates whenever new thumbnail is added
       valueListenable: ImageService.thumbnailCountNotifier,
       builder: (context, count, _) {
-
         // Rendering loading screen if no image is present
         if (count == 0) {
           return const Center(child: CircularProgressIndicator());
@@ -63,9 +60,7 @@ class ImageContainer extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       child: Stack(
         children: [
-          Positioned.fill(
-            child: Container(color: const Color.fromARGB(100, 58, 56, 56)),
-          ),
+          Positioned.fill(child: Container(color: const Color.fromARGB(100, 58, 56, 56))),
           Center(child: child),
         ],
       ),
@@ -73,20 +68,12 @@ class ImageContainer extends StatelessWidget {
   }
 }
 
-
 class LoadingTile extends StatelessWidget {
   const LoadingTile({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const ImageContainer(
-      child: Center(
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: Colors.white
-        ),
-      ),
-    );
+    return const ImageContainer(child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)));
   }
 }
 
@@ -95,12 +82,6 @@ class ErrorTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ImageContainer(
-      child: Icon(
-        Icons.error_outline,
-        color: Colors.grey,
-        size: 32
-      ),
-    );
+    return const ImageContainer(child: Icon(Icons.error_outline, color: Colors.grey, size: 32));
   }
 }
