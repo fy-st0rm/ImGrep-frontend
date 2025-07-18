@@ -11,11 +11,18 @@ Future<void> createNewUser() async {
 
     // Check if user_id is already saved
     final savedUserId = prefs.getString('user_id');
-    if (savedUserId != null) AppState().setUserResponse(savedUserId);
+    if (savedUserId != null) {
+      AppState().setUserResponse(savedUserId);
+      Dbg.i('Using saved user id : $savedUserId');
+      return;
+    }
 
     // No saved user_id, create new user
     final String apiUrl = Settings.serverIp;
-    final response = await http.post(Uri.parse('$apiUrl/api/user/new'), headers: {'Content-Type': 'application/json'});
+    final response = await http.post(
+      Uri.parse('$apiUrl/api/user/new'),
+      headers: {'Content-Type': 'application/json'},
+    );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final Map<String, dynamic> responseData = jsonDecode(response.body);
@@ -27,7 +34,9 @@ Future<void> createNewUser() async {
       Dbg.i('User created and stored successfully: $userId');
       return userId;
     } else {
-      Dbg.e('Failed to create user: ${response.statusCode}, Body: ${response.body}');
+      Dbg.e(
+        'Failed to create user: ${response.statusCode}, Body: ${response.body}',
+      );
     }
   } catch (e) {
     Dbg.e('Error creating user: $e');

@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:imgrep/app_state.dart';
 import 'package:imgrep/pages/get_started.dart';
 import 'package:imgrep/pages/loading.dart';
-import 'package:imgrep/services/api/new_user.dart';
 import 'package:imgrep/utils/initial_route_controller.dart';
 import 'package:imgrep/services/image_service.dart';
 import 'package:imgrep/services/database_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (AppState().userId == null || AppState().userId == "") await createNewUser();
+  // if (AppState().userId == null || AppState().userId == "") await createNewUser();
   // Initializing our services
   await DatabaseService.init();
   await ImageService.init();

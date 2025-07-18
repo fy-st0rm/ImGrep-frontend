@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:imgrep/types.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:photo_manager/photo_manager.dart';
@@ -21,8 +22,12 @@ class DatabaseService {
           CREATE TABLE images(
             id TEXT PRIMARY KEY,
             path TEXT,
-            modified_at DATE
+            modified_at DATE,
+            is_synced INTEGER DEFAULT 0
           );
+        ''');
+        await db.execute('''
+          CREATE INDEX idx_images_modified_at ON images(modified_at);
         ''');
         await db.execute('''
        CREATE TABLE stories (
@@ -49,22 +54,25 @@ class DatabaseService {
     final file = await img.file;
     if (file == null) return;
 
-    final path = file.path;
-    final id = img.id;
-    final modifiedAt = img.modifiedDateTime.toIso8601String();
+    final image = DbImage(
+      id: img.id,
+      path: file.path,
+      modifiedAt: img.modifiedDateTime,
+      isSynced: false,
+    );
 
     final db = await database;
-    await db.insert("images", {
-      "id": id,
-      "path": path,
-      "modified_at": modifiedAt,
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      "images",
+      image.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   static Future<void> batchInsertImage(List<AssetEntity> imgs) async {
     final db = await database;
 
-    final batch = db!.batch();
+    final batch = db.batch();
     for (final img in imgs) {
       final file = await img.file;
       if (file == null) {
@@ -72,20 +80,23 @@ class DatabaseService {
         continue;
       }
 
-      final path = file.path;
-      final id = img.id;
-      final modifiedAt = img.modifiedDateTime.toIso8601String();
+      final image = DbImage(
+        id: img.id,
+        path: file.path,
+        modifiedAt: img.modifiedDateTime,
+        isSynced: false,
+      );
 
-      batch.insert("images", {
-        "id": id,
-        "path": path,
-        "modified_at": modifiedAt,
-      }, conflictAlgorithm: ConflictAlgorithm.replace);
+      batch.insert(
+        "images",
+        image.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
     }
     await batch.commit(noResult: true);
   }
 
-  static Future<List<String>> getImagesPaginated(int page, int limit) async {
+  static Future<List<DbImage>> getImagesPaginated(int page, int limit) async {
     final db = await database;
     final maps = await db.query(
       "images",
@@ -93,7 +104,7 @@ class DatabaseService {
       offset: page,
       limit: limit,
     );
-    return List.generate(maps.length, (i) => maps[i]["id"] as String);
+    return maps.map((map) => DbImage.fromMap(map)).toList();
   }
 
   static Future<void> deleteImage(String id) async {
