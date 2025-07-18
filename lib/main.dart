@@ -9,7 +9,7 @@ import 'package:imgrep/services/database_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (AppState().userId == null || AppState().userId == "") await createNewUser();
+  // if (AppState().userId == null || AppState().userId == "") await createNewUser();
   // Initializing our services
   await DatabaseService.init();
   await ImageService.init();

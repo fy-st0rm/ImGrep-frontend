@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:imgrep/services/image_service.dart';
 
@@ -10,7 +9,8 @@ class ImageGrid extends StatelessWidget {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 1000) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 1000) {
       ImageService.loadMoreImages();
     }
   }
@@ -26,7 +26,6 @@ class ImageGrid extends StatelessWidget {
         if (count == 0) {
           return const Center(child: CircularProgressIndicator());
         }
-
         // Rendering the image grid
         return GridView.builder(
           controller: _scrollController,
@@ -39,49 +38,21 @@ class ImageGrid extends StatelessWidget {
             crossAxisSpacing: 2,
           ),
           itemBuilder: (context, index) {
-            final Uint8List? thumbnail = ImageService.getThumbnail(index);
-            if (thumbnail == null) return ErrorTile();
-            return ImageContainer(child: Image.memory(thumbnail));
+            final thumbnail = ImageService.getThumbnail(index);
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child:
+                  thumbnail == null
+                      ? const Icon(
+                        Icons.error_outline,
+                        color: Colors.grey,
+                        size: 32,
+                      )
+                      : Image.memory(thumbnail, fit: BoxFit.cover),
+            );
           },
         );
       },
     );
-  }
-}
-
-class ImageContainer extends StatelessWidget {
-  final Widget child;
-
-  const ImageContainer({super.key, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Stack(
-        children: [
-          Positioned.fill(child: Container(color: const Color.fromARGB(100, 58, 56, 56))),
-          Center(child: child),
-        ],
-      ),
-    );
-  }
-}
-
-class LoadingTile extends StatelessWidget {
-  const LoadingTile({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const ImageContainer(child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)));
-  }
-}
-
-class ErrorTile extends StatelessWidget {
-  const ErrorTile({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const ImageContainer(child: Icon(Icons.error_outline, color: Colors.grey, size: 32));
   }
 }

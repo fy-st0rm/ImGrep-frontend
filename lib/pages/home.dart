@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:imgrep/utils/debug_logger.dart' show Dbg;
 import 'package:imgrep/widgets/image_widgets.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -13,9 +11,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: ImageGrid(),
-    );
+    return Scaffold(backgroundColor: Colors.black, body: ImageGrid());
   }
 }

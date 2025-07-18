@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-class ImGrep_AppBar extends StatelessWidget
-                    implements PreferredSizeWidget
-{
-  const ImGrep_AppBar({super.key});
+class ImGrepAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const ImGrepAppBar({super.key});
 
   @override
   Size get preferredSize => const Size.fromHeight(70);

@@ -30,7 +30,7 @@ class MainLayoutState extends State<MainLayout> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ImGrep_AppBar(),
+      appBar: ImGrepAppBar(),
       backgroundColor: Colors.black,
       body: PageView(
         controller: _pageController,
