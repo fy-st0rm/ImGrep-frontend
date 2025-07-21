@@ -1,7 +1,13 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:imgrep/utils/debug_logger.dart';
+import 'package:imgrep/services/api/upload_image.dart';
+import 'package:imgrep/services/database_service.dart';
+import 'package:imgrep/services/image_service.dart';
+import 'package:imgrep/widgets/image_viewer.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -13,6 +19,35 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   File? _selectedImage;
   final TextEditingController _textController = TextEditingController();
+  final _scrollController = ScrollController();
+  List<String> _img_ids = [];
+
+  Future<void> _textSearch() async {
+    String query = _textController.text;
+    if (query.trim().isEmpty) {
+      return;
+    }
+    Map<String, dynamic>? res = await searchImage(query, 10);
+    if (res == null) return;
+
+    final indices = res["indices"];
+    List<String> ids = [];
+    for (int idx in indices) {
+      String? id = await DatabaseService.getIdFromFaissIndex(idx.toString());
+      if (id != null) {
+        ids.add(id);
+      }
+    }
+
+    Dbg.i(indices);
+    Dbg.i(ids);
+
+    setState(() {
+      _img_ids.clear();
+      _img_ids.addAll(ids);
+      _textController.clear();
+    });
+  }
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -37,10 +72,59 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(
-        child: Text(
-          "Image to be displayed here",
-          style: TextStyle(color: Colors.white),
+      child: GridView.builder(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(4),
+        itemCount: _img_ids.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          mainAxisSpacing: 2,
+          crossAxisSpacing: 2,
         ),
+        itemBuilder: (context, index) {
+          String id = _img_ids[index];
+      
+          // Use FutureBuilder to load thumbnail asynchronously
+          return FutureBuilder<Uint8List?>(
+            future: ImageService.getThumbnailById(id),
+            builder: (context, snapshot) {
+              Widget content;
+      
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                content = const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                );
+              } else if (snapshot.hasError || snapshot.data == null) {
+                content = const Icon(
+                  Icons.error_outline,
+                  color: Colors.grey,
+                  size: 32,
+                );
+              } else {
+                content = Image.memory(snapshot.data!, fit: BoxFit.cover);
+              }
+      
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ImageViewerWidget(
+                        initialIndex: index,
+                      ),
+                    ),
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: content,
+                ),
+              );
+            },
+          );
+        },
+      ),
       ),
       floatingActionButton: Container(
         margin: EdgeInsets.only(left: 20),
@@ -149,7 +233,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             constraints: BoxConstraints(),
                           ),
                           IconButton(
-                            onPressed: () {},
+                            onPressed: _textSearch,
                             icon: SvgPicture.asset('assets/icons/SendIcon.svg'),
                             padding: EdgeInsets.zero,
                             constraints: BoxConstraints(),

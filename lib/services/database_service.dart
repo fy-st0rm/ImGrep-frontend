@@ -23,7 +23,8 @@ class DatabaseService {
             id TEXT PRIMARY KEY,
             path TEXT,
             modified_at DATE,
-            is_synced INTEGER DEFAULT 0
+            is_synced INTEGER DEFAULT 0,
+            faiss_id INTEGER
           );
         ''');
         await db.execute('''
@@ -59,6 +60,7 @@ class DatabaseService {
       path: file.path,
       modifiedAt: img.modifiedDateTime,
       isSynced: false,
+      faissId: null
     );
 
     final db = await database;
@@ -85,6 +87,7 @@ class DatabaseService {
         path: file.path,
         modifiedAt: img.modifiedDateTime,
         isSynced: false,
+        faissId: null
       );
 
       batch.insert(
@@ -105,6 +108,31 @@ class DatabaseService {
       limit: limit,
     );
     return maps.map((map) => DbImage.fromMap(map)).toList();
+  }
+
+  static Future<void> updateFaissIndex(String id, String faissId) async {
+    final db = await database;
+    await db.update(
+      "images",
+      { "faiss_id": faissId },
+      where: "id = ?",
+      whereArgs: [id],
+    );
+  }
+
+  static Future<String?> getIdFromFaissIndex(String faissId) async {
+    final db = await database;
+    final results = await db.query(
+      "images",
+      columns: ["id"],
+      where: "faiss_id = ?",
+      whereArgs: [faissId],
+    );
+
+    if (results.isNotEmpty) {
+      return results.first["id"] as String;
+    }
+    return null;
   }
 
   static Future<void> deleteImage(String id) async {

@@ -4,7 +4,7 @@ import 'package:imgrep/services/api/user.dart';
 import 'package:imgrep/utils/debug_logger.dart';
 import 'package:imgrep/utils/settings.dart';
 
-Future<void> uploadImage(
+Future<Map<String, dynamic>?> uploadImage(
   String imagePath,
   String userId,
   String
@@ -21,24 +21,21 @@ Future<void> uploadImage(
 
     final response = await request.send();
     final responseBody = await response.stream.bytesToString();
-
-    if (response.statusCode == 200) {
-      Dbg.i('Success: $responseBody');
-    } else {
-      Dbg.e('Error: Status ${response.statusCode}, Body: $responseBody');
-    }
+    Map<String, dynamic> data = jsonDecode(responseBody);
+    return data;
   } catch (e) {
     Dbg.crash('Error: $e');
+    return null;
   }
 }
 
-Future<void> searchImage(String query, int amount) async {
+Future<Map<String, dynamic>?> searchImage(String query, int amount) async {
   try {
     final userId = await UserManager.getUserId();
 
     if (userId == null) {
       Dbg.crash("userid is not defined");
-      return;
+      return null;
     }
     final apiUrl = Settings.serverIp;
     final response = await http.post(
@@ -47,12 +44,10 @@ Future<void> searchImage(String query, int amount) async {
       body: jsonEncode({'user_id': userId, 'query': query, 'amount': amount}),
     );
 
-    if (response.statusCode == 200) {
-      Dbg.i('Success: ${response.body}');
-    } else {
-      Dbg.e('Error: Status ${response.statusCode}, Body: ${response.body}');
-    }
+    Map<String, dynamic> data = jsonDecode(response.body);
+    return data;
   } catch (e) {
     Dbg.e('Error: $e');
+    return null;
   }
 }

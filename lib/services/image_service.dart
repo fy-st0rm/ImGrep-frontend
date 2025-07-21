@@ -42,6 +42,38 @@ class ImageService {
     return _thumbnails[id];
   }
 
+  static Future<Uint8List?> getThumbnailById(String id) async {
+    if (_thumbnails.containsKey(id)) {
+      return _thumbnails[id];
+    }
+
+    final AssetEntity? asset = await AssetEntity.fromId(id);
+
+    if (asset == null) {
+      Dbg.e("Failed to load asset with id: $id");
+      return null;
+    }
+
+    // Creating a thumbnail from that asset
+    final Uint8List? thumbnailData = await asset.thumbnailDataWithSize(
+      const ThumbnailSize(200, 200),
+    );
+
+    if (thumbnailData == null) {
+      Dbg.e("Failed to load thumbnail data of id: $id");
+      return null;
+    }
+
+    // Adding it to the map of thumbnails and also increasing the notifier value
+    _thumbnails[id] = thumbnailData;
+
+    // Making sure there wont be duplicate ids
+    _imageIds.remove(id);
+    _imageIds.add(id);
+
+    return thumbnailData;
+  }
+
   /*
    * Initializes the permissions for the image handling
    * And also starts the gallery listening channel
