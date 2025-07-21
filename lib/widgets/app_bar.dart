@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:imgrep/pages/sync.dart';
 
 class ImGrepAppBar extends StatelessWidget implements PreferredSizeWidget {
   const ImGrepAppBar({super.key});
@@ -20,9 +21,15 @@ class ImGrepAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.sort),
+          icon: const Icon(Icons.sync),
           color: Colors.white,
-          onPressed: () {},
+          tooltip: 'Sync',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SyncPage()),
+            );
+          },
         ),
       ],
     );

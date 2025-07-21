@@ -4,17 +4,22 @@ import 'package:imgrep/utils/settings.dart';
 
 //just a api test ignore
 
-Future<void> apiTest() async {
+Future<bool> isApiRunningCorrectly() async {
   try {
     final apiUrl = Settings.serverIp;
-    final response = await http.get(Uri.parse('$apiUrl/test'), headers: {'Content-Type': 'application/json'});
+    final response = await http.get(
+      Uri.parse('$apiUrl/test'),
+      headers: {'Content-Type': 'application/json'},
+    );
 
     if (response.statusCode == 200) {
       Dbg.i('Success: ${response.body}');
+      return true;
     } else {
       Dbg.e('Error: Status ${response.statusCode}, Body: ${response.body}');
     }
   } catch (e) {
     Dbg.e('Error: $e');
   }
+  return false;
 }
