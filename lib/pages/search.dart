@@ -1,15 +1,16 @@
-import 'dart:io'; 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 
 class SearchScreen extends StatefulWidget {
+  const SearchScreen({super.key});
+
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-
   File? _selectedImage;
   final TextEditingController _textController = TextEditingController();
 
@@ -38,9 +39,7 @@ class _SearchScreenState extends State<SearchScreen> {
       body: Center(
         child: Text(
           "Image to be displayed here",
-          style: TextStyle(
-            color: Colors.white,
-          ),
+          style: TextStyle(color: Colors.white),
         ),
       ),
       floatingActionButton: Container(
@@ -71,72 +70,72 @@ class _SearchScreenState extends State<SearchScreen> {
                   controller: _textController,
                   readOnly: _selectedImage != null,
                   showCursor: _selectedImage == null,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 12),
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Color(0xFF2B2D30),
-                    hintText: _selectedImage == null ? 'What are we looking up for today' : null,
-                    hintStyle: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
+                    hintText:
+                        _selectedImage == null
+                            ? 'What are we looking up for today'
+                            : null,
+                    hintStyle: TextStyle(color: Colors.white70, fontSize: 12),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 22
-                      ),
+                      vertical: 22,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(15),
                       borderSide: BorderSide.none,
                     ),
 
-                    prefixIcon: _selectedImage != null
-                      ? Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            SizedBox(
-                              width: 36,
-                              height: 36,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(6),
-                                child: Image.file(
-                                  _selectedImage!,
-                                  fit: BoxFit.cover,
-                                ),
+                    prefixIcon:
+                        _selectedImage != null
+                            ? Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 8,
                               ),
-                            ),
-                            Positioned(
-                              top: -6,
-                              right: -6,
-                              child: GestureDetector(
-                                onTap: () {
-                                setState(() {
-                                  _selectedImage = null;
-                                });
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.7),
-                                  shape: BoxShape.circle,
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  SizedBox(
+                                    width: 36,
+                                    height: 36,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(6),
+                                      child: Image.file(
+                                        _selectedImage!,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
                                   ),
-                                  padding: EdgeInsets.all(2),
-                                  child: Icon(
-                                    Icons.close,
-                                    size: 12,
-                                    color: Colors.white,
+                                  Positioned(
+                                    top: -6,
+                                    right: -6,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          _selectedImage = null;
+                                        });
+                                      },
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.7),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        padding: EdgeInsets.all(2),
+                                        child: Icon(
+                                          Icons.close,
+                                          size: 12,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : null,
-
+                            )
+                            : null,
 
                     suffixIcon: Padding(
                       padding: EdgeInsets.only(right: 3),
@@ -151,9 +150,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           ),
                           IconButton(
                             onPressed: () {},
-                            icon: SvgPicture.asset(
-                              'assets/icons/SendIcon.svg',
-                            ),
+                            icon: SvgPicture.asset('assets/icons/SendIcon.svg'),
                             padding: EdgeInsets.zero,
                             constraints: BoxConstraints(),
                           ),
