@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:imgrep/services/api/upload_image.dart';
 import 'package:imgrep/services/api/user.dart';
+import 'package:imgrep/services/database_service.dart';
 import 'package:imgrep/utils/debug_logger.dart';
 import 'package:imgrep/utils/settings.dart';
 
@@ -54,7 +55,12 @@ class SyncPageState extends State<SyncPage> {
     Dbg.i('Background sync started: $imagePaths');
     for (int i = 0; i < imagePaths.length; i++) {
       Dbg.i('Processing image ${i + 1}/${imagePaths.length}');
-      await uploadImage(imagePaths[i], userId, serverIp);
+      final Map<String, dynamic>? res = await uploadImage(imagePaths[i], userId, serverIp);
+      if (res != null) {
+        String faissId = res["index"];
+        String id = res["message"];
+        await DatabaseService.updateFaissIndex(id, faissId);
+      }
     }
     return 'Synced ${imagePaths.length} images';
   }
@@ -64,13 +70,21 @@ class SyncPageState extends State<SyncPage> {
     try {
       final userId = await UserManager.getUserId();
       if (userId == null) throw Exception('No user ID');
-      final result = await compute(_syncImagesInBg, {
+      final result = await _syncImagesInBg({
         'imagePaths': imagePaths,
         'userId': userId,
         'serverIp': Settings.serverIp,
       });
+
+      // NOTE(slok): Removed compute cuz the db didnt worked inside it
+      // final result = await compute(_syncImagesInBg, {
+      //   'imagePaths': imagePaths,
+      //   'userId': userId,
+      //   'serverIp': Settings.serverIp,
+      // });
       _showSnackBar(result);
     } catch (e) {
+      Dbg.e(e);
       _showSnackBar('Error syncing: $e', isError: true);
     } finally {
       SyncManager.setSyncing(false);
