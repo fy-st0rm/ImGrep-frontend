@@ -12,13 +12,13 @@ import 'package:imgrep/services/database_service.dart';
 void main() async {
   await dotenv.load();
   WidgetsFlutterBinding.ensureInitialized();
-  if (!await isApiRunningCorrectly()) {
-    Dbg.crash(
-      "the backend is not connected sucessfully (try setting SERVER_IP in .env)",
-    );
-    return;
-  }
-  await UserManager.getUserId();
+  // if (!await isApiRunningCorrectly()) {
+  //   Dbg.crash(
+  //     "the backend is not connected sucessfully (try setting SERVER_IP in .env)",
+  //   );
+  //   return;
+  // }
+  // await UserManager.getUserId();
 
   // Initializing our services
   await DatabaseService.init();

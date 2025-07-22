@@ -56,11 +56,13 @@ class SyncPageState extends State<SyncPage> {
     for (int i = 0; i < imagePaths.length; i++) {
       Dbg.i('Processing image ${i + 1}/${imagePaths.length}');
       final Map<String, dynamic>? res = await uploadImage(imagePaths[i], userId, serverIp);
-      if (res != null) {
-        String faissId = res["index"];
-        String id = res["message"];
-        await DatabaseService.updateFaissIndex(id, faissId);
-      }
+        if (res != null) {
+          String faissId = res["index"].toString(); // Convert int to String
+          Dbg.i(faissId);
+          String id = res["message"];
+          Dbg.i(id);
+          await DatabaseService.updateFaissIndex(id, faissId);
+        }
     }
     return 'Synced ${imagePaths.length} images';
   }
