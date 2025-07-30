@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-class ImGrep_NavBar extends StatelessWidget {
+class ImGrepNavBar extends StatelessWidget {
   final Function(int) onClick;
   final int pageIndex;
 
-  const ImGrep_NavBar({
+  const ImGrepNavBar({
     super.key,
     required this.onClick,
     required this.pageIndex,

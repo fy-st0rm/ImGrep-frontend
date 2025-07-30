@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:photo_manager/photo_manager.dart';
@@ -10,7 +9,6 @@ class DatabaseService {
 
   static Future<void> init() async {
     final dbPath = await getDatabasesPath();
-
     Dbg.i(dbPath);
 
     _db = await openDatabase(
@@ -21,12 +19,14 @@ class DatabaseService {
           CREATE TABLE images(
             id TEXT PRIMARY KEY,
             path TEXT,
-            modified_at DATE,
+            created_at DATE,
+            latitude REAL,
+            longitude REAL,
             faiss_id INTEGER
           );
         ''');
         await db.execute('''
-          CREATE INDEX idx_images_modified_at ON images(modified_at);
+          CREATE INDEX idx_images_created_at ON images(created_at);
         ''');
         await db.execute('''
        CREATE TABLE stories (
@@ -53,10 +53,15 @@ class DatabaseService {
     final file = await img.file;
     if (file == null) return;
 
+    // Get location data if available
+    final locationData = await img.latlngAsync();
+
     final image = DbImage(
       id: img.id,
       path: file.path,
-      modifiedAt: img.modifiedDateTime,
+      createdAt: img.createDateTime,
+      latitude: locationData.latitude,
+      longitude: locationData.longitude,
       faissId: null,
     );
 
@@ -79,10 +84,15 @@ class DatabaseService {
         continue;
       }
 
+      // Get location data if available
+      final locationData = await img.latlngAsync();
+
       final image = DbImage(
         id: img.id,
         path: file.path,
-        modifiedAt: img.modifiedDateTime,
+        createdAt: img.createDateTime,
+        latitude: locationData.latitude, //most likely 0
+        longitude: locationData.longitude, //most likely 0
         faissId: null,
       );
 
@@ -99,7 +109,7 @@ class DatabaseService {
     final db = await database;
     final maps = await db.query(
       "images",
-      orderBy: "modified_at DESC",
+      orderBy: "created_at DESC",
       offset: page,
       limit: limit,
     );
@@ -111,7 +121,6 @@ class DatabaseService {
     await db.update(
       "images",
       {"faiss_id": faissId},
-
       where: "id = ?",
       whereArgs: [id],
     );
@@ -137,6 +146,21 @@ class DatabaseService {
     await db.delete("images", where: "id = ?", whereArgs: [id]);
   }
 
+  static Future<DbImage?> getImageByPath(String path) async {
+    final db = await database;
+    final maps = await db.query(
+      "images",
+      where: "path = ?",
+      whereArgs: [path],
+      limit: 1,
+    );
+
+    if (maps.isNotEmpty) {
+      return DbImage.fromMap(maps.first);
+    }
+    return null;
+  }
+
   static Future<List<DbImage>> getUnsyncedImages({
     int offset = 0,
     int limit = 100,
@@ -145,7 +169,7 @@ class DatabaseService {
     final maps = await db.query(
       "images",
       where: "faiss_id IS NULL",
-      orderBy: "modified_at DESC",
+      orderBy: "created_at DESC",
       offset: offset,
       limit: limit,
     );
@@ -187,7 +211,7 @@ class DatabaseService {
     );
   }
 
-  //STORYY
+  //STORY
 
   static Future<void> insertStory({
     required String id,
@@ -219,9 +243,9 @@ class DatabaseService {
 
     final results = await db.query(
       'images',
-      where: 'modified_at >= ? AND modified_at <= ?',
+      where: 'created_at >= ? AND created_at <= ?',
       whereArgs: [start, end],
-      orderBy: 'modified_at DESC',
+      orderBy: 'created_at DESC',
       limit: limit,
     );
 
@@ -232,14 +256,18 @@ class DatabaseService {
 class DbImage {
   final String id;
   final String path;
-  final DateTime modifiedAt;
+  final DateTime createdAt;
+  final double? latitude;
+  final double? longitude;
   final int? faissId;
 
   DbImage({
     required this.id,
     required this.path,
-    required this.modifiedAt,
-    this.faissId = null,
+    required this.createdAt,
+    this.latitude,
+    this.longitude,
+    this.faissId,
   });
 
   // Convert Image to a map for database insertion
@@ -247,7 +275,9 @@ class DbImage {
     return {
       'id': id,
       'path': path,
-      'modified_at': modifiedAt.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
+      'latitude': latitude,
+      'longitude': longitude,
       'faiss_id': faissId,
     };
   }
@@ -257,7 +287,9 @@ class DbImage {
     return DbImage(
       id: map['id'] as String,
       path: map['path'] as String,
-      modifiedAt: DateTime.parse(map['modified_at'] as String),
+      createdAt: DateTime.parse(map['created_at'] as String),
+      latitude: map['latitude'] as double?,
+      longitude: map['longitude'] as double?,
       faissId: map['faiss_id'],
     );
   }

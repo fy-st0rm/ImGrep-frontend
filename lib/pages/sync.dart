@@ -160,20 +160,15 @@ class SyncPageState extends State<SyncPage> {
 
       setState(() => _selectedImageCount = pickedImages.length);
 
-      // Convert XFile paths to DbImage objects (we'll need to query DB or create temporary ones)
+      // Convert XFile paths to DbImage objects by fetching from database
       final imagesToSync = <DbImage>[];
       for (final pickedImage in pickedImages) {
-        // For picked images, we create temporary DbImage objects
-        // In a real scenario, you might want to insert these into DB first
-        imagesToSync.add(
-          DbImage(
-            id:
-                'temp_${DateTime.now().millisecondsSinceEpoch}_${imagesToSync.length}',
-            path: pickedImage.path,
-            modifiedAt: DateTime.now(),
-            faissId: null,
-          ),
-        );
+        final dbImage = await DatabaseService.getImageByPath(pickedImage.path);
+        if (dbImage != null) {
+          imagesToSync.add(dbImage);
+        } else {
+          Dbg.e('Cant find image in the db: $pickedImage');
+        }
       }
 
       await _syncImages(imagesToSync);
