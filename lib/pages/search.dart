@@ -20,7 +20,7 @@ class _SearchScreenState extends State<SearchScreen> {
   File? _selectedImage;
   final TextEditingController _textController = TextEditingController();
   final _scrollController = ScrollController();
-  List<String> _img_ids = [];
+  final List<String> _imgIds = [];
 
   Future<void> _textSearch() async {
     String query = _textController.text;
@@ -43,8 +43,8 @@ class _SearchScreenState extends State<SearchScreen> {
     Dbg.i(ids);
 
     setState(() {
-      _img_ids.clear();
-      _img_ids.addAll(ids);
+      _imgIds.clear();
+      _imgIds.addAll(ids);
       _textController.clear();
     });
   }
@@ -76,14 +76,14 @@ class _SearchScreenState extends State<SearchScreen> {
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(4),
-          itemCount: _img_ids.length,
+          itemCount: _imgIds.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
             mainAxisSpacing: 2,
             crossAxisSpacing: 2,
           ),
           itemBuilder: (context, index) {
-            String id = _img_ids[index];
+            String id = _imgIds[index];
 
             // Use FutureBuilder to load thumbnail asynchronously
             return FutureBuilder<Uint8List?>(

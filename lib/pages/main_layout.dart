@@ -46,7 +46,7 @@ class MainLayoutState extends State<MainLayout> {
           CloudScreen(),
         ],
       ),
-      bottomNavigationBar: ImGrep_NavBar(
+      bottomNavigationBar: ImGrepNavBar(
         onClick: _onNavBarClick,
         pageIndex: _currentPageIndex,
       ),

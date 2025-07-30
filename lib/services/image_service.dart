@@ -23,8 +23,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ImageService {
   static late final PermissionState _ps;
   static const EventChannel _channel = EventChannel("GALLERY_HOOK_CHANNEL");
-  static Map<String, Uint8List> _thumbnails = {};
-  static List<String> _imageIds = [];
+  static final Map<String, Uint8List> _thumbnails = {};
+  static final List<String> _imageIds = [];
   static int _currentPage = 0;
   static bool _loading = false;
 
