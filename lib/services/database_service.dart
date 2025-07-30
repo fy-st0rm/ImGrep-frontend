@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:imgrep/types.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:photo_manager/photo_manager.dart';
@@ -10,12 +9,12 @@ class DatabaseService {
   static Database? _db;
 
   static Future<void> init() async {
-    final db_path = await getDatabasesPath();
+    final dbPath = await getDatabasesPath();
 
-    Dbg.i(db_path);
+    Dbg.i(dbPath);
 
     _db = await openDatabase(
-      join(db_path, "imgrep.db"),
+      join(dbPath, "imgrep.db"),
       version: 1,
       onCreate: (db, _) async {
         await db.execute('''
@@ -23,7 +22,6 @@ class DatabaseService {
             id TEXT PRIMARY KEY,
             path TEXT,
             modified_at DATE,
-            is_synced INTEGER DEFAULT 0,
             faiss_id INTEGER
           );
         ''');
@@ -59,8 +57,7 @@ class DatabaseService {
       id: img.id,
       path: file.path,
       modifiedAt: img.modifiedDateTime,
-      isSynced: false,
-      faissId: null
+      faissId: null,
     );
 
     final db = await database;
@@ -86,8 +83,7 @@ class DatabaseService {
         id: img.id,
         path: file.path,
         modifiedAt: img.modifiedDateTime,
-        isSynced: false,
-        faissId: null
+        faissId: null,
       );
 
       batch.insert(
@@ -114,7 +110,8 @@ class DatabaseService {
     final db = await database;
     await db.update(
       "images",
-      { "faiss_id": faissId },
+      {"faiss_id": faissId},
+
       where: "id = ?",
       whereArgs: [id],
     );
@@ -139,6 +136,58 @@ class DatabaseService {
     final db = await database;
     await db.delete("images", where: "id = ?", whereArgs: [id]);
   }
+
+  static Future<List<DbImage>> getUnsyncedImages({
+    int offset = 0,
+    int limit = 100,
+  }) async {
+    final db = await database;
+    final maps = await db.query(
+      "images",
+      where: "faiss_id IS NULL",
+      orderBy: "modified_at DESC",
+      offset: offset,
+      limit: limit,
+    );
+    return maps.map((map) => DbImage.fromMap(map)).toList();
+  }
+
+  static Future<int> getUnsyncedImagesCount() async {
+    final db = await database;
+    final result = await db.rawQuery(
+      "SELECT COUNT(*) as count FROM images WHERE faiss_id IS NULL",
+      [0],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  static Future<Map<String, int>> getSyncStats() async {
+    final db = await database;
+
+    final totalResult = await db.rawQuery(
+      "SELECT COUNT(*) as count FROM images",
+    );
+    final total = Sqflite.firstIntValue(totalResult) ?? 0;
+
+    final syncedResult = await db.rawQuery(
+      "SELECT COUNT(*) as count FROM images WHERE faiss_id IS NOT NULL",
+    );
+    final synced = Sqflite.firstIntValue(syncedResult) ?? 0;
+
+    return {'total': total, 'synced': synced, 'unsynced': total - synced};
+  }
+
+  static Future<void> markImageAsUnsynced(String id) async {
+    final db = await database;
+    await db.update(
+      "images",
+      {"faiss_id": null},
+      where: "id = ?",
+      whereArgs: [id],
+    );
+  }
+
+  //STORYY
 
   static Future<void> insertStory({
     required String id,
@@ -177,5 +226,39 @@ class DatabaseService {
     );
 
     return results.map((e) => e['id'] as String).toList();
+  }
+}
+
+class DbImage {
+  final String id;
+  final String path;
+  final DateTime modifiedAt;
+  final int? faissId;
+
+  DbImage({
+    required this.id,
+    required this.path,
+    required this.modifiedAt,
+    this.faissId = null,
+  });
+
+  // Convert Image to a map for database insertion
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'path': path,
+      'modified_at': modifiedAt.toIso8601String(),
+      'faiss_id': faissId,
+    };
+  }
+
+  // Create DbImage from a database map
+  static DbImage fromMap(Map<String, dynamic> map) {
+    return DbImage(
+      id: map['id'] as String,
+      path: map['path'] as String,
+      modifiedAt: DateTime.parse(map['modified_at'] as String),
+      faissId: map['faiss_id'],
+    );
   }
 }

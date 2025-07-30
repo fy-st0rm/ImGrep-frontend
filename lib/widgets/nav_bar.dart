@@ -8,7 +8,7 @@ class ImGrep_NavBar extends StatelessWidget {
   const ImGrep_NavBar({
     super.key,
     required this.onClick,
-    required this.pageIndex
+    required this.pageIndex,
   });
 
   @override
@@ -18,7 +18,7 @@ class ImGrep_NavBar extends StatelessWidget {
         // Added theme to reduce that ripple effect, needs more work though
         data: Theme.of(context).copyWith(
           splashFactory: InkRipple.splashFactory,
-          splashColor: Colors.white.withOpacity(0.05),
+          splashColor: Colors.white.withValues(alpha: 0.05),
           highlightColor: Colors.transparent,
         ),
         child: BottomNavigationBar(

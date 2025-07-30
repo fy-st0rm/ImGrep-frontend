@@ -72,59 +72,57 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(
-      child: GridView.builder(
-        controller: _scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(4),
-        itemCount: _img_ids.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          mainAxisSpacing: 2,
-          crossAxisSpacing: 2,
-        ),
-        itemBuilder: (context, index) {
-          String id = _img_ids[index];
-      
-          // Use FutureBuilder to load thumbnail asynchronously
-          return FutureBuilder<Uint8List?>(
-            future: ImageService.getThumbnailById(id),
-            builder: (context, snapshot) {
-              Widget content;
-      
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                content = const Center(
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                );
-              } else if (snapshot.hasError || snapshot.data == null) {
-                content = const Icon(
-                  Icons.error_outline,
-                  color: Colors.grey,
-                  size: 32,
-                );
-              } else {
-                content = Image.memory(snapshot.data!, fit: BoxFit.cover);
-              }
-      
-              return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ImageViewerWidget(
-                        initialIndex: index,
-                      ),
-                    ),
+        child: GridView.builder(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(4),
+          itemCount: _img_ids.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 2,
+            crossAxisSpacing: 2,
+          ),
+          itemBuilder: (context, index) {
+            String id = _img_ids[index];
+
+            // Use FutureBuilder to load thumbnail asynchronously
+            return FutureBuilder<Uint8List?>(
+              future: ImageService.getThumbnailById(id),
+              builder: (context, snapshot) {
+                Widget content;
+
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  content = const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   );
-                },
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: content,
-                ),
-              );
-            },
-          );
-        },
-      ),
+                } else if (snapshot.hasError || snapshot.data == null) {
+                  content = const Icon(
+                    Icons.error_outline,
+                    color: Colors.grey,
+                    size: 32,
+                  );
+                } else {
+                  content = Image.memory(snapshot.data!, fit: BoxFit.cover);
+                }
+
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ImageViewerWidget(initialIndex: index),
+                      ),
+                    );
+                  },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: content,
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
       floatingActionButton: Container(
         margin: EdgeInsets.only(left: 20),
@@ -204,7 +202,9 @@ class _SearchScreenState extends State<SearchScreen> {
                                       },
                                       child: Container(
                                         decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.7),
+                                          color: Colors.black.withValues(
+                                            alpha: 0.7,
+                                          ),
                                           shape: BoxShape.circle,
                                         ),
                                         padding: EdgeInsets.all(2),
