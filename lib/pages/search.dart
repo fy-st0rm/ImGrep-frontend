@@ -7,7 +7,9 @@ import 'package:imgrep/utils/debug_logger.dart';
 import 'package:imgrep/services/api/upload_image.dart';
 import 'package:imgrep/services/database_service.dart';
 import 'package:imgrep/services/image_service.dart';
-import 'package:imgrep/widgets/image_viewer.dart';
+import 'package:imgrep/widgets/search_image_viewer.dart';
+// Import the search-specific image viewer
+// You'll need to create this file: widgets/search_image_viewer.dart
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -21,7 +23,6 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _textController = TextEditingController();
   final _scrollController = ScrollController();
   final List<String> _imgIds = [];
-
   Future<void> _textSearch() async {
     String query = _textController.text;
     if (query.trim().isEmpty) {
@@ -32,6 +33,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     final indices = res["indices"];
     List<String> ids = [];
+
     for (int idx in indices) {
       String? id = await DatabaseService.getIdFromFaissIndex(idx.toString());
       if (id != null) {
@@ -64,7 +66,8 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void dispose() {
     _textController.dispose();
-    super.dispose;
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -110,7 +113,10 @@ class _SearchScreenState extends State<SearchScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ImageViewerWidget(initialIndex: index),
+                        builder: (_) => SearchImageViewerWidget(
+                          initialIndex: index, // This is now the correct index within search results
+                          imageIds: _imgIds, // Pass the list of search result IDs
+                        ),
                       ),
                     );
                   },

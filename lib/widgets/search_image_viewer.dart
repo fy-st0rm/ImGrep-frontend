@@ -2,15 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:imgrep/services/image_service.dart';
 import 'package:photo_view/photo_view.dart';
 
-class ImageViewerWidget extends StatefulWidget {
+class SearchImageViewerWidget extends StatefulWidget {
   final int initialIndex;
-  const ImageViewerWidget({required this.initialIndex, super.key});
+  final List<String> imageIds;
+
+  const SearchImageViewerWidget({
+    required this.initialIndex,
+    required this.imageIds,
+    super.key,
+  });
 
   @override
-  State<ImageViewerWidget> createState() => _ImageViewerWidgetState();
+  State<SearchImageViewerWidget> createState() => _SearchImageViewerWidgetState();
 }
 
-class _ImageViewerWidgetState extends State<ImageViewerWidget> {
+class _SearchImageViewerWidgetState extends State<SearchImageViewerWidget> {
   late final PageController _pageController;
   late final ScrollController _thumbnailScrollController;
   int currentIndex = 0;
@@ -33,7 +39,7 @@ class _ImageViewerWidgetState extends State<ImageViewerWidget> {
   }
 
   List<int> _getThumbnailIndices() {
-    final total = ImageService.thumbnailCount;
+    final total = widget.imageIds.length;
 
     int start = (currentIndex - thumbnailsPerPage ~/ 2).clamp(0, total - 1);
     int end = (start + thumbnailsPerPage).clamp(0, total);
@@ -47,7 +53,7 @@ class _ImageViewerWidgetState extends State<ImageViewerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final total = ImageService.thumbnailCount;
+    final total = widget.imageIds.length;
     final thumbnailIndices = _getThumbnailIndices();
 
     return Scaffold(
@@ -70,15 +76,28 @@ class _ImageViewerWidgetState extends State<ImageViewerWidget> {
                 setState(() => currentIndex = index);
               },
               itemBuilder: (context, index) {
-                final fullImage = ImageService.getThumbnail(index);
-                if (fullImage == null) {
-                  return const Center(
-                    child: Icon(Icons.error, color: Colors.white, size: 40),
-                  );
-                }
-                return PhotoView(
-                  imageProvider: MemoryImage(fullImage),
-                  backgroundDecoration: const BoxDecoration(color: Colors.black),
+                final imageId = widget.imageIds[index];
+
+                return FutureBuilder(
+                  future: ImageService.getThumbnailById(imageId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      );
+                    }
+
+                    if (snapshot.hasError || snapshot.data == null) {
+                      return const Center(
+                        child: Icon(Icons.error, color: Colors.white, size: 40),
+                      );
+                    }
+
+                    return PhotoView(
+                      imageProvider: MemoryImage(snapshot.data!),
+                      backgroundDecoration: const BoxDecoration(color: Colors.black),
+                    );
+                  },
                 );
               },
             ),
@@ -93,7 +112,7 @@ class _ImageViewerWidgetState extends State<ImageViewerWidget> {
               itemCount: thumbnailIndices.length,
               itemBuilder: (context, listIndex) {
                 final imageIndex = thumbnailIndices[listIndex];
-                final thumb = ImageService.getThumbnail(imageIndex);
+                final imageId = widget.imageIds[imageIndex];
                 final isSelected = imageIndex == currentIndex;
 
                 return GestureDetector(
@@ -113,8 +132,32 @@ class _ImageViewerWidgetState extends State<ImageViewerWidget> {
                           : Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: thumb == null
-                        ? Container(
+                    child: FutureBuilder(
+                      future: ImageService.getThumbnailById(imageId),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return Container(
+                            height: 60,
+                            width: 60,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade800,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+
+                        if (snapshot.hasError || snapshot.data == null) {
+                          return Container(
                             height: 60,
                             width: 60,
                             decoration: BoxDecoration(
@@ -122,16 +165,20 @@ class _ImageViewerWidgetState extends State<ImageViewerWidget> {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: const Icon(Icons.image, size: 30, color: Colors.grey),
-                          )
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: Image.memory(
-                              thumb,
-                              height: 60,
-                              width: 60,
-                              fit: BoxFit.cover,
-                            ),
+                          );
+                        }
+
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: Image.memory(
+                            snapshot.data!,
+                            height: 60,
+                            width: 60,
+                            fit: BoxFit.cover,
                           ),
+                        );
+                      },
+                    ),
                   ),
                 );
               },

@@ -40,27 +40,27 @@ class HomeScreen extends StatelessWidget {
           ),
           itemBuilder: (context, index) {
             final thumbnail = ImageService.getThumbnail(index);
-            
+
             return GestureDetector(
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => ImageViewerWidget(
-                    initialIndex: index,
-                  ),
+                      initialIndex: index,
+                    ),
                   ),
                 );
               },
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: thumbnail == null
-                  ? const Icon(
-                    Icons.error_outline,
-                    color: Colors.grey,
-                    size: 32,
-                  )
-                : Image.memory(thumbnail, fit: BoxFit.cover),
+                    ? const Icon(
+                        Icons.error_outline,
+                        color: Colors.grey,
+                        size: 32,
+                      )
+                    : Image.memory(thumbnail, fit: BoxFit.cover),
               ),
             );
           },
