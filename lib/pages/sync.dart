@@ -106,6 +106,9 @@ class SyncPageState extends State<SyncPage> {
             image.path,
             userId,
             Settings.serverIp,
+            image.createdAt,
+            image.latitude,
+            image.longitude
           );
 
           if (result != null &&
