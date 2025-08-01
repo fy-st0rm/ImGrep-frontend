@@ -309,4 +309,20 @@ class ImageService {
     // Update last synced timestamp
     await prefs.setString('lastSyncedAt', DateTime.now().toIso8601String());
   }
+
+  static Future<Map<String, String>?> getMetadata(int index) async {
+    if (index < 0 || index >= _imageIds.length) return null;
+
+    final String id = _imageIds[index];
+    final AssetEntity? asset = await AssetEntity.fromId(id);
+    if (asset == null) return null;
+
+    final String name = asset.title ?? 'Unknown';
+    final String date = DateFormat(
+      'yyyy-MM-dd HH:mm',
+    ).format(asset.createDateTime);
+    final String resolution = '${asset.width} x ${asset.height}';
+
+    return {'Filename': name, 'Date': date, 'Resolution': resolution};
+  }
 }

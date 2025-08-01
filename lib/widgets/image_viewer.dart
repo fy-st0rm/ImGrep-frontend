@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:imgrep/services/image_service.dart';
 import 'package:photo_view/photo_view.dart';
+import 'package:imgrep/services/image_service.dart';
 
 class ImageViewerWidget extends StatefulWidget {
   final int initialIndex;
-  const ImageViewerWidget({required this.initialIndex, super.key});
+  const ImageViewerWidget({super.key, required this.initialIndex});
 
   @override
   State<ImageViewerWidget> createState() => _ImageViewerWidgetState();
@@ -12,129 +12,197 @@ class ImageViewerWidget extends StatefulWidget {
 
 class _ImageViewerWidgetState extends State<ImageViewerWidget> {
   late final PageController _pageController;
-  late final ScrollController _thumbnailScrollController;
   int currentIndex = 0;
-
-  static const int thumbnailsPerPage = 8;
+  bool _showMetadata = false;
 
   @override
   void initState() {
-    _pageController = PageController(initialPage: widget.initialIndex);
-    _thumbnailScrollController = ScrollController();
-    currentIndex = widget.initialIndex;
     super.initState();
+    currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: currentIndex);
   }
 
   @override
   void dispose() {
     _pageController.dispose();
-    _thumbnailScrollController.dispose();
     super.dispose();
   }
 
-  List<int> _getThumbnailIndices() {
-    final total = ImageService.thumbnailCount;
-
-    int start = (currentIndex - thumbnailsPerPage ~/ 2).clamp(0, total - 1);
-    int end = (start + thumbnailsPerPage).clamp(0, total);
-
-    if (end - start < thumbnailsPerPage && start > 0) {
-      start = (end - thumbnailsPerPage).clamp(0, total - 1);
-    }
-
-    return List.generate(end - start, (i) => start + i);
+  void _toggleMetadata(bool show) {
+    setState(() => _showMetadata = show);
   }
 
   @override
   Widget build(BuildContext context) {
     final total = ImageService.thumbnailCount;
-    final thumbnailIndices = _getThumbnailIndices();
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Column(
+      body: Stack(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text(
-              '${currentIndex + 1} of $total',
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ),
-
-          Expanded(
+          GestureDetector(
+            onVerticalDragEnd: (details) {
+              if (details.primaryVelocity != null) {
+                if (details.primaryVelocity! < -200) {
+                  _toggleMetadata(true); // Swipe up
+                } else if (details.primaryVelocity! > 200) {
+                  _toggleMetadata(false); // Swipe down
+                }
+              }
+            },
             child: PageView.builder(
               controller: _pageController,
               itemCount: total,
               onPageChanged: (index) {
-                setState(() => currentIndex = index);
+                setState(() {
+                  currentIndex = index;
+                  _showMetadata = false;
+                });
               },
               itemBuilder: (context, index) {
-                final fullImage = ImageService.getThumbnail(index);
-                if (fullImage == null) {
+                final img = ImageService.getThumbnail(index);
+                if (img == null) {
                   return const Center(
-                    child: Icon(Icons.error, color: Colors.white, size: 40),
+                    child: Icon(
+                      Icons.broken_image,
+                      color: Colors.white,
+                      size: 40,
+                    ),
                   );
                 }
                 return PhotoView(
-                  imageProvider: MemoryImage(fullImage),
-                  backgroundDecoration: const BoxDecoration(color: Colors.black),
+                  imageProvider: MemoryImage(img),
+                  backgroundDecoration: const BoxDecoration(
+                    color: Colors.black,
+                  ),
                 );
               },
             ),
           ),
 
-          Container(
-            height: 80,
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            child: ListView.builder(
-              controller: _thumbnailScrollController,
-              scrollDirection: Axis.horizontal,
-              itemCount: thumbnailIndices.length,
-              itemBuilder: (context, listIndex) {
-                final imageIndex = thumbnailIndices[listIndex];
-                final thumb = ImageService.getThumbnail(imageIndex);
-                final isSelected = imageIndex == currentIndex;
+          if (!_showMetadata)
+            Positioned(
+              bottom: 20,
+              left: 0,
+              right: 0,
+              child: SizedBox(
+                height: 70,
+                child: Center(
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    shrinkWrap: true,
+                    itemCount: total,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    itemBuilder: (context, i) {
+                      final thumb = ImageService.getThumbnail(i);
+                      final isSelected = i == currentIndex;
 
-                return GestureDetector(
-                  onTap: () {
-                    _pageController.animateToPage(
-                      imageIndex,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.all(6),
-                    padding: isSelected ? const EdgeInsets.all(2) : EdgeInsets.zero,
-                    decoration: BoxDecoration(
-                      border: isSelected
-                          ? Border.all(color: Colors.white, width: 2)
-                          : Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: thumb == null
-                        ? Container(
-                            height: 60,
-                            width: 60,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade800,
-                              borderRadius: BorderRadius.circular(4),
+                      return GestureDetector(
+                        onTap: () {
+                          _pageController.animateToPage(
+                            i,
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeInOut,
+                          );
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          padding:
+                              isSelected
+                                  ? const EdgeInsets.all(2)
+                                  : EdgeInsets.zero,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: isSelected ? Colors.white : Colors.white30,
+                              width: isSelected ? 2 : 1,
                             ),
-                            child: const Icon(Icons.image, size: 30, color: Colors.grey),
-                          )
-                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: ClipRRect(
                             borderRadius: BorderRadius.circular(4),
-                            child: Image.memory(
-                              thumb,
-                              height: 60,
-                              width: 60,
-                              fit: BoxFit.cover,
+                            child:
+                                thumb == null
+                                    ? Container(
+                                      height: 60,
+                                      width: 60,
+                                      color: Colors.grey.shade800,
+                                      child: const Icon(
+                                        Icons.image,
+                                        color: Colors.white38,
+                                      ),
+                                    )
+                                    : Image.memory(
+                                      thumb,
+                                      height: 60,
+                                      width: 60,
+                                      fit: BoxFit.cover,
+                                    ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+
+          // Metadata Panel
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            bottom: _showMetadata ? 0 : -220,
+            left: 0,
+            right: 0,
+            height: 220,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              child: FutureBuilder<Map<String, String>?>(
+                future: ImageService.getMetadata(currentIndex),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    );
+                  }
+
+                  final metadata = snapshot.data!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                        ),
+                      ),
+                      const Text(
+                        "Image Details",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...metadata.entries.map(
+                        (e) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Text(
+                            '${e.key}: ${e.value}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.white70,
                             ),
                           ),
-                  ),
-                );
-              },
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         ],
