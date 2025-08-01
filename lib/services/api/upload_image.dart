@@ -7,8 +7,10 @@ import 'package:imgrep/utils/settings.dart';
 Future<Map<String, dynamic>?> uploadImage(
   String imagePath,
   String userId,
-  String
-  serverIp, // because bg process cant load serverip from .env or from static class
+  String serverIp,
+  DateTime createdAt,
+  double? latitude,
+  double? longitude,
 ) async {
   try {
     var request = http.MultipartRequest(
@@ -16,6 +18,11 @@ Future<Map<String, dynamic>?> uploadImage(
       Uri.parse('$serverIp/api/upload-image'),
     );
     request.fields['user_id'] = userId;
+
+    request.fields['created_at'] = createdAt.toIso8601String();
+    request.fields['latitude'] = (latitude == null)? '': latitude.toString();
+    request.fields['longitude'] = (longitude == null)? '': longitude.toString();
+
     request.files.add(await http.MultipartFile.fromPath('image', imagePath));
     request.headers['Content-Type'] = 'multipart/form-data';
 
