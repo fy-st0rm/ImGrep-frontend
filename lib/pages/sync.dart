@@ -141,9 +141,11 @@ class SyncPageState extends State<SyncPage> {
               result["index"] != null &&
               result["message"] != null) {
             final faissId = result["index"].toString();
+            final labelId = result["label_id"].toString();
 
             // Use the image ID from our database, not the returned one
             await DatabaseService.updateFaissIndex(image.id, faissId);
+            await DatabaseService.updateLabelId(image.id, labelId);
             successCount++;
 
             Dbg.i(
