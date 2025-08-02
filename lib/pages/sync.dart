@@ -8,10 +8,12 @@ import 'package:imgrep/utils/settings.dart';
 
 class SyncManager extends ChangeNotifier {
   static bool _isSyncing = false;
+  static bool _shouldStopSync = false;
   static int _syncProgress = 0;
   static int _totalItems = 0;
 
   static bool get isSyncing => _isSyncing;
+  static bool get shouldStopSync => _shouldStopSync;
   static int get syncProgress => _syncProgress;
   static int get totalItems => _totalItems;
   static double get progressPercentage =>
@@ -21,21 +23,37 @@ class SyncManager extends ChangeNotifier {
   SyncManager._internal();
   factory SyncManager() => _instance;
 
-  static void _updateSyncState({bool? syncing, int? progress, int? total}) {
+  static void _updateSyncState({
+    bool? syncing,
+    int? progress,
+    int? total,
+    bool? shouldStop,
+  }) {
     if (syncing != null) _isSyncing = syncing;
     if (progress != null) _syncProgress = progress;
     if (total != null) _totalItems = total;
+    if (shouldStop != null) _shouldStopSync = shouldStop;
     _instance.notifyListeners();
   }
 
-  static void startSync(int totalItems) =>
-      _updateSyncState(syncing: true, progress: 0, total: totalItems);
+  static void startSync(int totalItems) => _updateSyncState(
+    syncing: true,
+    progress: 0,
+    total: totalItems,
+    shouldStop: false,
+  );
 
   static void updateProgress(int currentProgress) =>
       _updateSyncState(progress: currentProgress);
 
-  static void finishSync() =>
-      _updateSyncState(syncing: false, progress: 0, total: 0);
+  static void stopSync() => _updateSyncState(shouldStop: true);
+
+  static void finishSync() => _updateSyncState(
+    syncing: false,
+    progress: 0,
+    total: 0,
+    shouldStop: false,
+  );
 }
 
 class SyncPage extends StatefulWidget {
@@ -64,7 +82,6 @@ class SyncPageState extends State<SyncPage> {
   }
 
   void _onSyncStateChanged() => setState(() {});
-  
   Future<void> _loadSyncStats() async {
     try {
       final stats = await DatabaseService.getSyncStats();
@@ -90,6 +107,16 @@ class SyncPageState extends State<SyncPage> {
       int failureCount = 0;
 
       for (int i = 0; i < images.length; i++) {
+        // Check if sync should be stopped
+        if (SyncManager.shouldStopSync) {
+          Dbg.i('Sync stopped by user at ${i + 1}/${images.length}');
+          _showMessage(
+            'Sync stopped. Synced $successCount/${images.length} images.',
+            isError: true,
+          );
+          break;
+        }
+
         final image = images[i];
 
         try {
@@ -108,7 +135,7 @@ class SyncPageState extends State<SyncPage> {
             Settings.serverIp,
             image.createdAt,
             image.latitude,
-            image.longitude
+            image.longitude,
           );
 
           if (result != null &&
@@ -139,14 +166,16 @@ class SyncPageState extends State<SyncPage> {
         SyncManager.updateProgress(i + 1);
       }
 
-      // Show detailed results
-      if (failureCount == 0) {
-        _showMessage('Successfully synced all $successCount images!');
-      } else {
-        _showMessage(
-          'Synced $successCount/${images.length} images ($failureCount failed)',
-          isError: failureCount > successCount,
-        );
+      // Show detailed results only if sync wasn't stopped
+      if (!SyncManager.shouldStopSync) {
+        if (failureCount == 0) {
+          _showMessage('Successfully synced all $successCount images!');
+        } else {
+          _showMessage(
+            'Synced $successCount/${images.length} images ($failureCount failed)',
+            isError: failureCount > successCount,
+          );
+        }
       }
     } catch (e) {
       Dbg.e('Sync error: $e');
@@ -156,7 +185,10 @@ class SyncPageState extends State<SyncPage> {
     }
   }
 
-  Future<void> _showSyncConfirmationDialog(List<DbImage> imagesToSync, {bool isSelectedImages = true}) async {
+  Future<void> _showSyncConfirmationDialog(
+    List<DbImage> imagesToSync, {
+    bool isSelectedImages = true,
+  }) async {
     final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -185,13 +217,10 @@ class SyncPageState extends State<SyncPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                isSelectedImages 
-                  ? 'Proceed with syncing ${imagesToSync.length} selected image${imagesToSync.length == 1 ? '' : 's'}?'
-                  : 'Proceed with syncing all ${imagesToSync.length} unsynced image${imagesToSync.length == 1 ? '' : 's'}?',
-                style: TextStyle(
-                  color: Colors.grey[300],
-                  fontSize: 16,
-                ),
+                isSelectedImages
+                    ? 'Proceed with syncing ${imagesToSync.length} selected image${imagesToSync.length == 1 ? '' : 's'}?'
+                    : 'Proceed with syncing all ${imagesToSync.length} unsynced image${imagesToSync.length == 1 ? '' : 's'}?',
+                style: TextStyle(color: Colors.grey[300], fontSize: 16),
               ),
               const SizedBox(height: 16),
               Container(
@@ -208,10 +237,7 @@ class SyncPageState extends State<SyncPage> {
                     Expanded(
                       child: Text(
                         'This will upload secure embeddings to enable fast image search.',
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
                       ),
                     ),
                   ],
@@ -222,9 +248,7 @@ class SyncPageState extends State<SyncPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.grey[400],
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.grey[400]),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
@@ -245,6 +269,9 @@ class SyncPageState extends State<SyncPage> {
 
     if (confirmed == true) {
       await _syncImages(imagesToSync);
+
+      // Reload stats after sync if it was for all unsynced images
+      if (!isSelectedImages) await _loadSyncStats();
     } else if (isSelectedImages) {
       // Reset selected image count if user cancels selected images sync
       setState(() => _selectedImageCount = 0);
@@ -262,10 +289,10 @@ class SyncPageState extends State<SyncPage> {
       final imagesToSync = <DbImage>[];
       for (final pickedImage in pickedImages) {
         DbImage? dbImage;
-        
+
         // First try to find by path
         dbImage = await DatabaseService.getImageByPath(pickedImage.path);
-        
+
         // If not found by path, try by filename
         dbImage ??= await DatabaseService.getImageByFilename(pickedImage.name);
 
@@ -297,7 +324,10 @@ class SyncPageState extends State<SyncPage> {
       }
 
       Dbg.i('Found ${unsyncedImages.length} unsynced images');
-      await _showSyncConfirmationDialog(unsyncedImages, isSelectedImages: false);
+      await _showSyncConfirmationDialog(
+        unsyncedImages,
+        isSelectedImages: false,
+      );
 
       // Reload stats after sync (only if sync was confirmed and completed)
       if (!SyncManager.isSyncing) {
