@@ -129,7 +129,7 @@ class _SearchImageViewerWidgetState extends State<SearchImageViewerWidget> {
                     decoration: BoxDecoration(
                       border: isSelected
                           ? Border.all(color: Colors.white, width: 2)
-                          : Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
+                          : Border.all(color: Colors.grey.withValues(alpha:0.3), width: 1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: FutureBuilder(

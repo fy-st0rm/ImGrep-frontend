@@ -53,6 +53,8 @@ String generateStoryDescription(String title, int count) {
 }
 
 class LibraryScreen extends StatefulWidget {
+  const LibraryScreen({super.key});
+
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
