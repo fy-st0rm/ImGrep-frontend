@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:imgrep/pages/story_view.dart';
 import 'package:imgrep/services/database_service.dart';
 import 'package:imgrep/widgets/yearly_higlights.dart';
+import 'package:imgrep/utils/debug_logger.dart';
+import 'package:imgrep/services/api/label.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import 'package:imgrep/widgets/person_photo_widget.dart';
@@ -52,6 +54,26 @@ Future<List<Story>> loadStoriesFromDB() async {
 }
 
 Future<List<PersonData>> loadPeopleFromDB() async {
+  final images = await DatabaseService.getImagesWithDistinctLabels();
+
+  List<PersonData> people = [];
+  
+  for (final img in images) {
+    final label = await getLabelById(img.label_id) ?? "Unknown";
+    final count = 69;
+    final AssetEntity? cover = await AssetEntity.fromId(img.id);
+  
+    people.add(PersonData(
+      id: img.label_id!,
+      name: label,
+      coverPhoto: cover,
+      photoCount: count,
+    ));
+  }
+
+  return people;
+
+  /*
   // Hardcoded sample people data for now
   await Future.delayed(const Duration(milliseconds: 500)); // Simulate loading
 
@@ -105,6 +127,7 @@ Future<List<PersonData>> loadPeopleFromDB() async {
       photoCount: 15,
     ),
   ];
+  */
 }
 
 String generateStoryDescription(String title, int count) {
@@ -220,6 +243,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 child: PersonPhotoWidget(
                   name: person.name,
                   imageUrl: person.imageUrl,
+                  coverPhoto: person.coverPhoto,
                   size: 80.0,
                   photoCount: person.photoCount,
                   showPhotoCount: true,
@@ -239,8 +263,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
   }
 
-  void _updatePersonName(int index, String newName) {
+  void _updatePersonName(int index, String newName) async {
     if (index < 0 || index >= people.length) return;
+
+    // Update in the backend
+    await updateLabel(people[index].id, newName);
 
     setState(() {
       final updatedPerson = PersonData(

@@ -22,7 +22,8 @@ class DatabaseService {
             created_at DATE,
             latitude REAL,
             longitude REAL,
-            faiss_id INTEGER
+            faiss_id INTEGER,
+            label_id TEXT
           );
         ''');
         await db.execute('''
@@ -220,6 +221,29 @@ class DatabaseService {
     );
   }
 
+  static Future<List<DbImage>> getImagesWithDistinctLabels() async {
+    final db = await database;
+  
+    final result = await db.rawQuery('''
+      SELECT * FROM images 
+      WHERE label_id IS NOT NULL AND label_id != ''
+      GROUP BY label_id
+      ORDER BY created_at DESC
+    ''');
+  
+    return result.map((map) => DbImage.fromMap(map)).toList();
+  }
+
+  static Future<void> updateLabelId(String id, String labelId) async {
+    final db = await database;
+    await db.update(
+      "images",
+      {"label_id": labelId},
+      where: "id = ?",
+      whereArgs: [id],
+    );
+  }
+
   //STORY
 
   static Future<void> insertStory({
@@ -269,6 +293,7 @@ class DbImage {
   final double? latitude;
   final double? longitude;
   final int? faissId;
+  final String? label_id;
 
   DbImage({
     required this.id,
@@ -277,6 +302,7 @@ class DbImage {
     this.latitude,
     this.longitude,
     this.faissId,
+    this.label_id,
   });
 
   // Convert Image to a map for database insertion
@@ -288,6 +314,7 @@ class DbImage {
       'latitude': latitude,
       'longitude': longitude,
       'faiss_id': faissId,
+      'label_id': label_id,
     };
   }
 
@@ -300,6 +327,7 @@ class DbImage {
       latitude: map['latitude'] as double?,
       longitude: map['longitude'] as double?,
       faissId: map['faiss_id'],
+      label_id: map['label_id'] as String?,
     );
   }
 }
