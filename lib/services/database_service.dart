@@ -161,6 +161,20 @@ class DatabaseService {
     return null;
   }
 
+  static Future<DbImage?> getImageByFilename(String filename) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'images',
+      where: 'path LIKE ?',
+      whereArgs: ['%$filename'],
+    );
+
+    if (maps.isNotEmpty) {
+      return DbImage.fromMap(maps.first);
+    }
+    return null;
+  }
+
   static Future<List<DbImage>> getUnsyncedImages({
     int offset = 0,
     int limit = 100,
