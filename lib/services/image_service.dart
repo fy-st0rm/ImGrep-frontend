@@ -221,15 +221,24 @@ class ImageService {
    * This function is responsible to load the image from database and store its thumbnails.
    */
 
-  static Future<void> loadMoreImages({int amount = Settings.pageSize}) async {
+  static Future<void> loadMoreImages({
+    int amount = Settings.pageSize,
+    bool getUnsyncedImages = false,
+  }) async {
     if (_loading) return;
     _loading = true;
 
     // Get the image ids from the database
-    final List<DbImage> images = await DatabaseService.getImagesPaginated(
-      _currentPage,
-      amount,
-    );
+    List<DbImage> images;
+    if (getUnsyncedImages) {
+      images = await DatabaseService.getUnsyncedImagesPaginated(
+        _currentPage,
+        amount,
+      );
+    } else {
+      images = await DatabaseService.getImagesPaginated(_currentPage, amount);
+    }
+
     _currentPage += images.length;
 
     for (var img in images) {
@@ -324,5 +333,12 @@ class ImageService {
     final String resolution = '${asset.width} x ${asset.height}';
 
     return {'Filename': name, 'Date': date, 'Resolution': resolution};
+  }
+
+  static String? getImageIdByIndex(int index) {
+    if (index >= 0 && index < _imageIds.length) {
+      return _imageIds[index];
+    }
+    return null;
   }
 }

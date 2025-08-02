@@ -116,6 +116,21 @@ class DatabaseService {
     return maps.map((map) => DbImage.fromMap(map)).toList();
   }
 
+  static Future<List<DbImage>> getUnsyncedImagesPaginated(
+    int page,
+    int limit,
+  ) async {
+    final db = await database;
+    final maps = await db.query(
+      "images",
+      where: "faiss_id IS NULL",
+      orderBy: "created_at DESC",
+      offset: page,
+      limit: limit,
+    );
+    return maps.map((map) => DbImage.fromMap(map)).toList();
+  }
+
   static Future<void> updateFaissIndex(String id, String faissId) async {
     final db = await database;
     await db.update(
@@ -146,32 +161,12 @@ class DatabaseService {
     await db.delete("images", where: "id = ?", whereArgs: [id]);
   }
 
-  static Future<DbImage?> getImageByPath(String path) async {
+  static Future<DbImage?> getImageById(String id) async {
     final db = await database;
-    final maps = await db.query(
-      "images",
-      where: "path = ?",
-      whereArgs: [path],
-      limit: 1,
-    );
+    final maps = await db.query("images", where: "id = ?", whereArgs: [id]);
 
-    if (maps.isNotEmpty) {
-      return DbImage.fromMap(maps.first);
-    }
-    return null;
-  }
+    if (maps.isNotEmpty) return DbImage.fromMap(maps.first);
 
-  static Future<DbImage?> getImageByFilename(String filename) async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'images',
-      where: 'path LIKE ?',
-      whereArgs: ['%$filename'],
-    );
-
-    if (maps.isNotEmpty) {
-      return DbImage.fromMap(maps.first);
-    }
     return null;
   }
 

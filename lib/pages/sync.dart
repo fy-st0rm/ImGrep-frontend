@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:imgrep/services/api/upload_image.dart';
 import 'package:imgrep/services/api/user.dart';
 import 'package:imgrep/services/database_service.dart';
 import 'package:imgrep/utils/debug_logger.dart';
 import 'package:imgrep/utils/settings.dart';
+import 'package:imgrep/widgets/custom_image_picker.dart';
 
 class SyncManager extends ChangeNotifier {
   static bool _isSyncing = false;
@@ -64,7 +64,6 @@ class SyncPage extends StatefulWidget {
 }
 
 class SyncPageState extends State<SyncPage> {
-  final ImagePicker _picker = ImagePicker();
   int _selectedImageCount = 0;
   Map<String, int>? _syncStats;
 
@@ -280,35 +279,28 @@ class SyncPageState extends State<SyncPage> {
 
   Future<void> _pickAndSyncImages() async {
     try {
-      final pickedImages = await _picker.pickMultiImage();
-      if (pickedImages.isEmpty) return;
-
-      setState(() => _selectedImageCount = pickedImages.length);
-
-      // Convert XFile paths to DbImage objects by fetching from database
-      final imagesToSync = <DbImage>[];
-      for (final pickedImage in pickedImages) {
-        DbImage? dbImage;
-
-        // First try to find by path
-        dbImage = await DatabaseService.getImageByPath(pickedImage.path);
-
-        // If not found by path, try by filename
-        dbImage ??= await DatabaseService.getImageByFilename(pickedImage.name);
-
-        if (dbImage != null) {
-          imagesToSync.add(dbImage);
-        } else {
-          Dbg.e('Can\'t find image in the db: $pickedImage');
-        }
-      }
-
-      if (imagesToSync.isNotEmpty) {
-        await _showSyncConfirmationDialog(imagesToSync, isSelectedImages: true);
-      } else {
-        _showMessage('No valid images found in database', isError: true);
-        setState(() => _selectedImageCount = 0);
-      }
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder:
+              (context) => CustomImagePicker(
+                onImagesSelected: (List<DbImage> selectedImages) async {
+                  if (selectedImages.isEmpty) {
+                    _showMessage(
+                      'No valid images found in database',
+                      isError: true,
+                    );
+                    return;
+                  }
+                  setState(() => _selectedImageCount = selectedImages.length);
+                  // Show sync confirmation dialog with the selected images
+                  await _showSyncConfirmationDialog(
+                    selectedImages,
+                    isSelectedImages: true,
+                  );
+                },
+              ),
+        ),
+      );
     } catch (e) {
       _showMessage('Error selecting images: $e', isError: true);
       setState(() => _selectedImageCount = 0);
