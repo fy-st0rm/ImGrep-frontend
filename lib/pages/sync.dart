@@ -166,11 +166,18 @@ class SyncPageState extends State<SyncPage> {
       // Convert XFile paths to DbImage objects by fetching from database
       final imagesToSync = <DbImage>[];
       for (final pickedImage in pickedImages) {
-        final dbImage = await DatabaseService.getImageByPath(pickedImage.path);
+        DbImage? dbImage;
+        
+        // First try to find by path
+        dbImage = await DatabaseService.getImageByPath(pickedImage.path);
+        
+        // If not found by path, try by filename
+        dbImage ??= await DatabaseService.getImageByFilename(pickedImage.name);
+
         if (dbImage != null) {
           imagesToSync.add(dbImage);
         } else {
-          Dbg.e('Cant find image in the db: $pickedImage');
+          Dbg.e('Can\'t find image in the db: $pickedImage');
         }
       }
 
@@ -179,7 +186,6 @@ class SyncPageState extends State<SyncPage> {
       _showMessage('Error selecting images: $e', isError: true);
     }
   }
-
   Future<void> _syncAllUnsyncedImages() async {
     try {
       final unsyncedImages = await _getUnsyncedImages();
