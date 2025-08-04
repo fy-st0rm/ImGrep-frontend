@@ -157,6 +157,21 @@ class DatabaseService {
     return null;
   }
 
+    static Future<int?> getFiassIdfromId(String imageId) async {
+    final db = await database;
+    final results = await db.query(
+      "images",
+      columns: ["faiss_id"],
+      where: "id = ?",
+      whereArgs: [imageId],
+    );
+
+    if (results.isNotEmpty) {
+      return results.first["faiss_id"] as int;
+    }
+    return null;
+  }
+
   static Future<void> deleteImage(String id) async {
     final db = await database;
     await db.delete("images", where: "id = ?", whereArgs: [id]);

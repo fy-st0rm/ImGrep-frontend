@@ -34,6 +34,13 @@ class ImageService {
 
   // Getters
   static int get thumbnailCount => _thumbnails.length;
+  static String getImageId(int index) {
+    if (index >= 0 && index < _imageIds.length) {
+      return _imageIds[index];
+    }
+    throw RangeError('Index out of bounds: $index');
+  }
+
   static Uint8List? getThumbnail(int index) {
     if (index >= _imageIds.length) return null;
 

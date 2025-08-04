@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:imgrep/services/api/upload_image.dart';
+import 'package:imgrep/utils/debug_logger.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:imgrep/services/image_service.dart';
 
@@ -14,6 +17,12 @@ class _ImageViewerWidgetState extends State<ImageViewerWidget> {
   late final PageController _pageController;
   int currentIndex = 0;
   bool _showMetadata = false;
+  String caption = '';
+  Future<String> getCaptionById(String id) async {
+    caption = (await getCaption(id));
+    Dbg.i(caption);
+    return caption;
+  }
 
   @override
   void initState() {
@@ -160,24 +169,27 @@ class _ImageViewerWidgetState extends State<ImageViewerWidget> {
                 color: Colors.black,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
               ),
-              child: FutureBuilder<Map<String, String>?>(
-                future: ImageService.getMetadata(currentIndex),
+              child: FutureBuilder<List<dynamic>>(
+                future: Future.wait([
+                  ImageService.getMetadata(currentIndex),
+                  getCaptionById(
+                    ImageService.getImageId(currentIndex),
+                  ), // assumes getImageId exists
+                ]),
+
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
+                  if (!snapshot.hasData || snapshot.data == null) {
                     return const Center(
                       child: CircularProgressIndicator(color: Colors.white),
                     );
                   }
 
-                  final metadata = snapshot.data!;
+                  final metadata = snapshot.data![0] as Map<String, String>;
+                  final caption = snapshot.data![1] as String;
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Center(
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                        ),
-                      ),
                       const Text(
                         "Image Details",
                         style: TextStyle(
@@ -197,6 +209,23 @@ class _ImageViewerWidgetState extends State<ImageViewerWidget> {
                               color: Colors.white70,
                             ),
                           ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        "Caption",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        caption,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
                         ),
                       ),
                     ],
