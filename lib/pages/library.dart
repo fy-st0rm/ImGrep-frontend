@@ -7,6 +7,7 @@ import 'package:imgrep/services/api/label.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import 'package:imgrep/widgets/person_photo_widget.dart';
+import 'package:imgrep/pages/person_photo_page.dart';
 
 class Story {
   final String id;
@@ -57,12 +58,12 @@ Future<List<PersonData>> loadPeopleFromDB() async {
   final images = await DatabaseService.getImagesWithDistinctLabels();
 
   List<PersonData> people = [];
-  
+
   for (final img in images) {
     final label = await getLabelById(img.label_id) ?? "Unknown";
     final count = 69;
     final AssetEntity? cover = await AssetEntity.fromId(img.id);
-  
+
     people.add(PersonData(
       id: img.label_id!,
       name: label,
@@ -297,15 +298,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   void _navigateToPersonPhotos(PersonData person) {
     // Navigate to a page showing all photos of this person
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Showing ${person.photoCount} photos of ${person.name}'),
-          backgroundColor: Colors.grey[800],
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => PersonPhotosPage(
+        personId: person.id,
+        personName: person.name,
+        coverPhoto: person.coverPhoto,
+      ))
+    );
   }
 
   Widget _buildStoriesSection() {
