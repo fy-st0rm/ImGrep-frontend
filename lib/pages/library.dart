@@ -401,6 +401,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       ),
                       Container(
                         padding: const EdgeInsets.all(12),
+                        height: 100,
+                        width: double.infinity,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -412,10 +414,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                 color: Colors.white,
                               ),
                             ),
-                            const SizedBox(height: 4),
                             Text(
                               description,
-                              maxLines: 3,
+                              maxLines: 2,
                               style: const TextStyle(
                                 fontSize: 13,
                                 color: Colors.grey,
