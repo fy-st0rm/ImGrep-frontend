@@ -3,6 +3,7 @@ import 'package:imgrep/pages/story_view.dart';
 import 'package:imgrep/services/database_service.dart';
 import 'package:imgrep/widgets/yearly_higlights.dart';
 import 'package:imgrep/services/api/label.dart';
+import 'package:imgrep/utils/debug_logger.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import 'package:imgrep/widgets/person_photo_widget.dart';
@@ -59,12 +60,16 @@ Future<List<PersonData>> loadPeopleFromDB() async {
   List<PersonData> people = [];
 
   for (final img in images) {
-    final label = await getLabelById(img.label_id) ?? "Unknown";
-    final count = 69;
+    Dbg.i(img.labelId);
+    if (img.labelId == null || img.labelId == "null") continue;
+    final String labelId = img.labelId!;
+
+    final label = await getLabelById(labelId) ?? "Unknown";
+    final count = await DatabaseService.getImageCountForLabel(labelId);
     final AssetEntity? cover = await AssetEntity.fromId(img.id);
 
     people.add(PersonData(
-      id: img.label_id!,
+      id: labelId,
       name: label,
       coverPhoto: cover,
       photoCount: count,

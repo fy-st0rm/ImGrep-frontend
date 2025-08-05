@@ -249,6 +249,17 @@ class DatabaseService {
     return result.map((map) => DbImage.fromMap(map)).toList();
   }
 
+  static Future<int> getImageCountForLabel(String id) async {
+    final db = await database;
+
+	  final result = await db.rawQuery('''
+	  	SELECT COUNT(*) as count FROM images
+	  	WHERE label_id = ?
+	  ''', [id]);
+
+	  return Sqflite.firstIntValue(result) ?? 0;
+  }
+
   static Future<void> updateLabelId(String id, String labelId) async {
     final db = await database;
     await db.update(
@@ -308,7 +319,7 @@ class DbImage {
   final double? latitude;
   final double? longitude;
   final int? faissId;
-  final String? label_id;
+  final String? labelId;
 
   DbImage({
     required this.id,
@@ -317,7 +328,7 @@ class DbImage {
     this.latitude,
     this.longitude,
     this.faissId,
-    this.label_id,
+    this.labelId,
   });
 
   // Convert Image to a map for database insertion
@@ -329,7 +340,7 @@ class DbImage {
       'latitude': latitude,
       'longitude': longitude,
       'faiss_id': faissId,
-      'label_id': label_id,
+      'label_id': labelId,
     };
   }
 
@@ -342,7 +353,7 @@ class DbImage {
       latitude: map['latitude'] as double?,
       longitude: map['longitude'] as double?,
       faissId: map['faiss_id'],
-      label_id: map['label_id'] as String?,
+      labelId: map['label_id'] as String?,
     );
   }
 }

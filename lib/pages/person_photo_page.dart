@@ -38,7 +38,7 @@ class _PersonPhotosPageState extends State<PersonPhotosPage> {
       });
 
       final allImages = await DatabaseService.getImagesWithDistinctLabels();
-      final images = allImages.where((img) => img.label_id == widget.personId).toList();
+      final images = allImages.where((img) => img.labelId == widget.personId).toList();
 
       List<AssetEntity> assets = [];
       for (final img in images) {
