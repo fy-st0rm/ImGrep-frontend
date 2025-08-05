@@ -162,7 +162,7 @@ class _PersonPhotoWidgetState extends State<PersonPhotoWidget> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.blue,
+                      color: Colors.grey,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Colors.black, width: 1),
                     ),
@@ -185,7 +185,7 @@ class _PersonPhotoWidgetState extends State<PersonPhotoWidget> {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
-                        color: Colors.blue,
+                        color: Colors.grey,
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
