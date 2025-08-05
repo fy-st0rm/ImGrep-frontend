@@ -6,7 +6,6 @@ import 'package:imgrep/widgets/app_bar.dart';
 import 'package:imgrep/pages/home.dart';
 import 'package:imgrep/pages/search.dart';
 import 'package:imgrep/pages/library.dart';
-import 'package:imgrep/pages/cloud.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -43,7 +42,6 @@ class MainLayoutState extends State<MainLayout> {
           HomeScreen(),
           SearchScreen(),
           LibraryScreen(),
-          CloudScreen(),
         ],
       ),
       bottomNavigationBar: ImGrepNavBar(

@@ -48,10 +48,6 @@ class ImGrepNavBar extends StatelessWidget {
               icon: SvgPicture.asset('assets/icons/LibraryIcon.svg'),
               label: '•',
             ),
-            BottomNavigationBarItem(
-              icon: SvgPicture.asset('assets/icons/CloudIcon.svg'),
-              label: '•',
-            ),
           ],
         ),
       ),
