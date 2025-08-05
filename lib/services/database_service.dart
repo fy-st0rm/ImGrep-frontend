@@ -157,7 +157,7 @@ class DatabaseService {
     return null;
   }
 
-    static Future<int?> getFiassIdfromId(String imageId) async {
+  static Future<int?> getFiassIdfromId(String imageId) async {
     final db = await database;
     final results = await db.query(
       "images",
