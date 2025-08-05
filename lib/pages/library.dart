@@ -176,7 +176,6 @@ String generateStoryDescription(String title, int count) {
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
 
-
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
 }
@@ -322,11 +321,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
     // Navigate to a page showing all photos of this person
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => PersonPhotosPage(
-        personId: person.id,
-        personName: person.name,
-        coverPhoto: person.coverPhoto,
-      ))
+      MaterialPageRoute(
+        builder:
+            (context) => PersonPhotosPage(
+              personId: person.id,
+              personName: person.name,
+              coverPhoto: person.coverPhoto,
+            ),
+      ),
     );
   }
 
@@ -335,105 +337,105 @@ class _LibraryScreenState extends State<LibraryScreen> {
       return const SizedBox.shrink();
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Text(
-            'Stories',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+    return CustomScrollView(
+      shrinkWrap: true,
+      physics:
+          const NeverScrollableScrollPhysics(), 
+      slivers: [
+        const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Text(
+              'Stories',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
         ),
-        GridView.builder(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-          itemCount: stories.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 0.8,
-          ),
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemBuilder: (context, index) {
-            final story = stories[index];
-            final cover = story.assets.first;
-            final description = generateStoryDescription(
-              story.title,
-              story.assets.length,
-            );
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          sliver: SliverGrid(
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final story = stories[index];
+              final cover = story.assets.first;
+              final description = generateStoryDescription(
+                story.title,
+                story.assets.length,
+              );
 
-            return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => StoryViewPage(storyId: story.id),
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => StoryViewPage(storyId: story.id),
+                    ),
+                  );
+                },
+                child: Card(
+                  color: Colors.black,
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                );
-              },
-              child: Card(
-                color: Colors.black,
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AspectRatio(
-                      aspectRatio: 3 / 2,
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          topRight: Radius.circular(16),
-                        ),
-                        child: AssetEntityImage(
-                          cover,
-                          isOriginal: false,
-                          fit: BoxFit.cover,
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AspectRatio(
+                        aspectRatio: 3 / 2,
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16),
+                          ),
+                          child: AssetEntityImage(
+                            cover,
+                            isOriginal: false,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            story.title,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              story.title,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            description,
-                            maxLines: 3,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey,
+                            const SizedBox(height: 4),
+                            Text(
+                              description,
+                              maxLines: 3,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            }, childCount: stories.length),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 0.8,
+            ),
+          ),
         ),
       ],
     );
@@ -443,24 +445,25 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // People section
-                  _buildPeopleSection(),
+      body:
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // People section
+                    _buildPeopleSection(),
 
-                  // Stories section
-                  _buildStoriesSection(),
+                    // Stories section
+                    _buildStoriesSection(),
 
-                  // Year highlights section
-                  const YearHighlightsWidget(),
-                  const SizedBox(height: 20),
-                ],
+                    // Year highlights section
+                    const YearHighlightsWidget(),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
-            ),
     );
   }
 }
