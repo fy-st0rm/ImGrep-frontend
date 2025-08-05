@@ -10,8 +10,7 @@ void main() async {
   await dotenv.load();
   WidgetsFlutterBinding.ensureInitialized();
   // Initializing our services
-  await DatabaseService.init();
-  await ImageService.init();
+  await DatabaseService.init(); 
 
   runApp(const App());
 }
