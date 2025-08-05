@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:imgrep/services/api/upload_image.dart';
 import 'package:imgrep/utils/debug_logger.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:imgrep/services/image_service.dart';
+import 'package:photo_manager/photo_manager.dart';
 
 class ImageViewerWidget extends StatefulWidget {
   final int initialIndex;
@@ -18,10 +20,71 @@ class _ImageViewerWidgetState extends State<ImageViewerWidget> {
   int currentIndex = 0;
   bool _showMetadata = false;
   String caption = '';
+  
+  // Cache for full resolution images
+  final Map<String, Uint8List> _fullResImageCache = {};
+  final Map<String, bool> _loadingImages = {};
+
   Future<String> getCaptionById(String id) async {
     caption = (await getCaption(id));
     Dbg.i(caption);
     return caption;
+  }
+
+  Future<Uint8List?> _getFullResolutionImage(int index) async {
+    final String? imageId = ImageService.getImageIdByIndex(index);
+    if (imageId == null) return null;
+
+    // Return cached image if available
+    if (_fullResImageCache.containsKey(imageId)) {
+      return _fullResImageCache[imageId];
+    }
+
+    // Check if already loading
+    if (_loadingImages[imageId] == true) {
+      // Wait for loading to complete
+      while (_loadingImages[imageId] == true) {
+        await Future.delayed(const Duration(milliseconds: 50));
+      }
+      return _fullResImageCache[imageId];
+    }
+
+    // Start loading
+    _loadingImages[imageId] = true;
+    
+    try {
+      final AssetEntity? asset = await AssetEntity.fromId(imageId);
+      if (asset == null) {
+        Dbg.e("Failed to load asset with id: $imageId");
+        return null;
+      }
+
+      // Get full resolution image data
+      final Uint8List? fullResData = await asset.originBytes;
+      
+      if (fullResData != null) {
+        _fullResImageCache[imageId] = fullResData;
+        return fullResData;
+      }
+    } catch (e) {
+      Dbg.e("Error loading full resolution image: $e");
+    } finally {
+      _loadingImages[imageId] = false;
+    }
+    
+    return null;
+  }
+
+  void _preloadAdjacentImages() {
+    // Preload previous and next images
+    final total = ImageService.thumbnailCount;
+    
+    if (currentIndex > 0) {
+      _getFullResolutionImage(currentIndex - 1);
+    }
+    if (currentIndex < total - 1) {
+      _getFullResolutionImage(currentIndex + 1);
+    }
   }
 
   @override
@@ -29,6 +92,10 @@ class _ImageViewerWidgetState extends State<ImageViewerWidget> {
     super.initState();
     currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: currentIndex);
+    
+    // Preload current and adjacent images
+    _getFullResolutionImage(currentIndex);
+    _preloadAdjacentImages();
   }
 
   @override
@@ -67,23 +134,72 @@ class _ImageViewerWidgetState extends State<ImageViewerWidget> {
                   currentIndex = index;
                   _showMetadata = false;
                 });
+                
+                // Preload adjacent images when page changes
+                _preloadAdjacentImages();
               },
               itemBuilder: (context, index) {
-                final img = ImageService.getThumbnail(index);
-                if (img == null) {
-                  return const Center(
-                    child: Icon(
-                      Icons.broken_image,
-                      color: Colors.white,
-                      size: 40,
-                    ),
-                  );
-                }
-                return PhotoView(
-                  imageProvider: MemoryImage(img),
-                  backgroundDecoration: const BoxDecoration(
-                    color: Colors.black,
-                  ),
+                return FutureBuilder<Uint8List?>(
+                  future: _getFullResolutionImage(index),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      // Show thumbnail while loading full resolution
+                      final thumbnail = ImageService.getThumbnail(index);
+                      if (thumbnail != null) {
+                        return Stack(
+                          children: [
+                            PhotoView(
+                              imageProvider: MemoryImage(thumbnail),
+                              backgroundDecoration: const BoxDecoration(
+                                color: Colors.black,
+                              ),
+                            ),
+                            const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          ],
+                        );
+                      } else {
+                        return const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        );
+                      }
+                    }
+                    
+                    if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                      // Fallback to thumbnail if full resolution fails
+                      final thumbnail = ImageService.getThumbnail(index);
+                      if (thumbnail != null) {
+                        return PhotoView(
+                          imageProvider: MemoryImage(thumbnail),
+                          backgroundDecoration: const BoxDecoration(
+                            color: Colors.black,
+                          ),
+                        );
+                      }
+                      
+                      return const Center(
+                        child: Icon(
+                          Icons.broken_image,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                      );
+                    }
+
+                    // Display full resolution image
+                    return PhotoView(
+                      imageProvider: MemoryImage(snapshot.data!),
+                      backgroundDecoration: const BoxDecoration(
+                        color: Colors.black,
+                      ),
+                      minScale: PhotoViewComputedScale.contained,
+                      maxScale: PhotoViewComputedScale.covered * 3.0,
+                    );
+                  },
                 );
               },
             ),
@@ -174,9 +290,8 @@ class _ImageViewerWidgetState extends State<ImageViewerWidget> {
                   ImageService.getMetadata(currentIndex),
                   getCaptionById(
                     ImageService.getImageId(currentIndex),
-                  ), // assumes getImageId exists
+                  ),
                 ]),
-
                 builder: (context, snapshot) {
                   if (!snapshot.hasData || snapshot.data == null) {
                     return const Center(
