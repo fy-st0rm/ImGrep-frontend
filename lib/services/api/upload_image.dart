@@ -38,6 +38,27 @@ Future<Map<String, dynamic>?> uploadImage(
   }
 }
 
+Future<Map<String, dynamic>?> imageToImageSearch(String imagePath, String userId) async {
+  try {
+    final apiUrl = Settings.serverIp;
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$apiUrl/api/search/image'),
+    );
+    request.fields['user_id'] = userId;
+    request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+    request.headers['Content-Type'] = 'multipart/form-data';
+
+    final response = await request.send();
+    final responseBody = await response.stream.bytesToString();
+    Map<String, dynamic> data = jsonDecode(responseBody);
+    return data;
+  } catch (e) {
+    Dbg.crash('Error: $e');
+    return null;
+  }
+}
+
 Future<Map<String, dynamic>?> searchImage(String query, int amount) async {
   try {
     final userId = await UserManager.getUserId();

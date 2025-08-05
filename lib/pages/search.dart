@@ -8,6 +8,8 @@ import 'package:imgrep/services/api/upload_image.dart';
 import 'package:imgrep/services/database_service.dart';
 import 'package:imgrep/services/image_service.dart';
 import 'package:imgrep/widgets/search_image_viewer.dart';
+import 'package:imgrep/services/api/user.dart';
+
 // Import the search-specific image viewer
 // You'll need to create this file: widgets/search_image_viewer.dart
 
@@ -23,6 +25,12 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _textController = TextEditingController();
   final _scrollController = ScrollController();
   final List<String> _imgIds = [];
+
+
+  //
+  //  Text Based Search Functions
+  //
+
   Future<void> _textSearch() async {
     String query = _textController.text;
     if (query.trim().isEmpty) {
@@ -51,6 +59,51 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
+
+  //
+  // Image Based Search
+  //
+
+  Future<void> _imageSearch() async {
+    if (_selectedImage == null) return;
+    final userId = await UserManager.getUserId();
+    if (userId == null) {
+      Dbg.e("User ID is null. Create a new user please.");
+      return;
+    }
+    Map<String, dynamic>? res = await imageToImageSearch(_selectedImage!.path, userId);
+    if (res == null) {
+      Dbg.e("Response was null");
+      return;
+    }
+
+    final indices = res["indices"];
+    List<String> ids = [];
+
+    for (int idx in indices) {
+      String? id = await DatabaseService.getIdFromFaissIndex(idx.toString());
+      if (id != null) {
+        ids.add(id);
+      }
+    }
+
+    Dbg.i(indices);
+    Dbg.i(ids);
+
+    setState(() {
+      _imgIds.clear();
+      _imgIds.addAll(ids);
+      _textController.clear();
+    });
+  }
+
+  // Combined both search
+  Future<void> _search() async {
+    await _textSearch();
+    await _imageSearch();
+  }
+
+  // Image picker for choosing the search image
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -239,7 +292,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             constraints: BoxConstraints(),
                           ),
                           IconButton(
-                            onPressed: _textSearch,
+                            onPressed: _search,
                             icon: SvgPicture.asset('assets/icons/SendIcon.svg'),
                             padding: EdgeInsets.zero,
                             constraints: BoxConstraints(),
