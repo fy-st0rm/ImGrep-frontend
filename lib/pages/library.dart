@@ -401,7 +401,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       ),
                       Container(
                         padding: const EdgeInsets.all(12),
-                        height: 100,
                         width: double.infinity,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,7 +415,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             ),
                             Text(
                               description,
-                              maxLines: 2,
+                              maxLines: 3,
                               style: const TextStyle(
                                 fontSize: 13,
                                 color: Colors.grey,
@@ -433,8 +432,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.8,
+              childAspectRatio: 0.75,
             ),
           ),
         ),
