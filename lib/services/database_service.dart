@@ -238,14 +238,40 @@ class DatabaseService {
 
   static Future<List<DbImage>> getImagesWithDistinctLabels() async {
     final db = await database;
-  
+
     final result = await db.rawQuery('''
-      SELECT * FROM images 
+      SELECT * FROM images
       WHERE label_id IS NOT NULL AND label_id != ''
       GROUP BY label_id
       ORDER BY created_at DESC
     ''');
-  
+
+    return result.map((map) => DbImage.fromMap(map)).toList();
+  }
+
+  static Future<List<DbImage>> getAllImagesWithLabels() async {
+    final db = await database;
+
+    final result = await db.query(
+      'images',
+      where: 'label_id IS NOT NULL AND label_id != ?',
+      whereArgs: [''],
+      orderBy: 'created_at DESC',
+    );
+
+    return result.map((map) => DbImage.fromMap(map)).toList();
+  }
+
+  static Future<List<DbImage>> getImagesForLabel(String labelId) async {
+    final db = await database;
+
+    final result = await db.query(
+      'images',
+      where: 'label_id = ?',
+      whereArgs: [labelId],
+      orderBy: 'created_at DESC',
+    );
+
     return result.map((map) => DbImage.fromMap(map)).toList();
   }
 

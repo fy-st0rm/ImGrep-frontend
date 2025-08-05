@@ -57,23 +57,41 @@ Future<List<Story>> loadStoriesFromDB() async {
 Future<List<PersonData>> loadPeopleFromDB() async {
   final images = await DatabaseService.getImagesWithDistinctLabels();
 
+  final uniqueLabelIds = <String>{};
+  for (final img in images) {
+    if (img.labelId != null && img.labelId != "null") {
+      uniqueLabelIds.add(img.labelId!);
+    }
+  }
+
   List<PersonData> people = [];
 
-  for (final img in images) {
-    Dbg.i(img.labelId);
-    if (img.labelId == null || img.labelId == "null") continue;
-    final String labelId = img.labelId!;
+  for (final labelId in uniqueLabelIds) {
+    Dbg.i('Processing label: $labelId');
 
-    final label = await getLabelById(labelId) ?? "Unknown";
-    final count = await DatabaseService.getImageCountForLabel(labelId);
-    final AssetEntity? cover = await AssetEntity.fromId(img.id);
+    try {
+      final label = await getLabelById(labelId) ?? "Unknown";
+      final count = await DatabaseService.getImageCountForLabel(labelId);
 
-    people.add(PersonData(
-      id: labelId,
-      name: label,
-      coverPhoto: cover,
-      photoCount: count,
-    ));
+      // Get the first image for this label as cover photo
+      final coverImageData = images.firstWhere(
+        (img) => img.labelId == labelId,
+        orElse: () => images.first, // fallback
+      );
+
+      final AssetEntity? cover = await AssetEntity.fromId(coverImageData.id);
+
+      Dbg.i('Person: $label, Count: $count, Cover loaded: ${cover != null}');
+
+      people.add(PersonData(
+        id: labelId,
+        name: label,
+        coverPhoto: cover,
+        photoCount: count,
+      ));
+    } catch (e) {
+      Dbg.e('Error loading person data for label $labelId: $e');
+    }
   }
 
   return people;

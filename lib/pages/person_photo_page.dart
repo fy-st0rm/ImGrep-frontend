@@ -37,16 +37,28 @@ class _PersonPhotosPageState extends State<PersonPhotosPage> {
         isLoading = true;
       });
 
-      final allImages = await DatabaseService.getImagesWithDistinctLabels();
-      final images = allImages.where((img) => img.labelId == widget.personId).toList();
+      final images = await DatabaseService.getImagesForLabel(widget.personId);
+      developer.log('Images found for person ${widget.personName}: ${images.length}', name: 'PersonPhotosPage');
 
       List<AssetEntity> assets = [];
-      for (final img in images) {
-        final asset = await AssetEntity.fromId(img.id);
-        if (asset != null) {
-          assets.add(asset);
+      for (int i = 0; i < images.length; i++) {
+        final img = images[i];
+        developer.log('Processing image ${i + 1}/${images.length}: ID=${img.id}', name: 'PersonPhotosPage');
+
+        try {
+          final asset = await AssetEntity.fromId(img.id);
+          if (asset != null) {
+            assets.add(asset);
+            developer.log('Successfully loaded asset ${assets.length}', name: 'PersonPhotosPage');
+          } else {
+            developer.log('Asset is null for image ID: ${img.id}', name: 'PersonPhotosPage');
+          }
+        } catch (assetError) {
+          developer.log('Error loading asset for image ID ${img.id}: $assetError', name: 'PersonPhotosPage');
         }
       }
+
+      developer.log('Final assets loaded: ${assets.length}', name: 'PersonPhotosPage');
 
       setState(() {
         personPhotos = assets;
@@ -124,30 +136,21 @@ class _PersonPhotosPageState extends State<PersonPhotosPage> {
               ),
             )
           : personPhotos.isEmpty
-              ? Center(
+              ? const Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         Icons.photo_library_outlined,
                         size: 64,
-                        color: Colors.grey[600],
+                        color: Colors.grey,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       Text(
-                        'No photos found',
+                        'No photos found for this person',
                         style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Photos of ${widget.personName} will appear here',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
+                          color: Colors.grey,
+                          fontSize: 16,
                         ),
                       ),
                     ],
