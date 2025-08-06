@@ -317,6 +317,36 @@ class DatabaseService {
       'created_at': createdAt.toIso8601String(),
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
+static Future<void> updateStory({
+  required String title,
+  required List<String> newImageIds,
+}) async {
+  final db = await database;
+
+  // 1. Get existing image IDs
+  final List<Map<String, dynamic>> result = await db.query(
+    'stories',
+    columns: ['image_ids'],
+    where: 'title = ?',
+    whereArgs: [title],
+  );
+
+  if (result.isEmpty) return; 
+
+  final existingImageIds = (jsonDecode(result[0]['image_ids']) as List<dynamic>)
+      .cast<String>();
+
+  final updatedImageIds = {...newImageIds,...existingImageIds}.toList();
+
+  await db.update(
+    'stories',
+    {'image_ids': jsonEncode(updatedImageIds)},
+    where: 'title = ?',
+    whereArgs: [title],
+  );
+}
+
+
 
   static Future<List<String>> getHighlightsOfYear(
     int year, {

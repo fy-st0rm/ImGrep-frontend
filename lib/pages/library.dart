@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:imgrep/pages/story_view.dart';
 import 'package:imgrep/services/database_service.dart';
@@ -191,6 +193,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   void initState() {
     super.initState();
     loadData();
+    Dbg.i('hallo');
   }
 
   void loadData() async {
