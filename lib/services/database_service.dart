@@ -30,16 +30,17 @@ class DatabaseService {
           CREATE INDEX idx_images_created_at ON images(created_at);
         ''');
         await db.execute('''
-       CREATE TABLE stories (
-        id TEXT PRIMARY KEY,
-        title TEXT,
-        description TEXT,
-        image_ids TEXT,
-        cover_image_id TEXT,
-        created_at TEXT,
-        favorite INTEGER DEFAULT 0
+          CREATE TABLE stories (
+            id TEXT PRIMARY KEY,
+            title TEXT,
+            description TEXT,
+            image_ids TEXT,
+            cover_image_id TEXT,
+            created_at TEXT,
+            favorite INTEGER DEFAULT 0
+          );
+          '''
         );
-      ''');
       },
     );
   }

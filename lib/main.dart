@@ -4,11 +4,14 @@ import 'package:imgrep/pages/get_started.dart';
 import 'package:imgrep/pages/loading.dart';
 import 'package:imgrep/utils/initial_route_controller.dart';
 import 'package:imgrep/services/database_service.dart';
+import 'package:imgrep/services/image_service.dart';
 
 void main() async {
   await dotenv.load();
   WidgetsFlutterBinding.ensureInitialized();
   // Initializing our services
+
+  await ImageService.init();
   await DatabaseService.init(); 
 
   runApp(const App());
