@@ -331,7 +331,7 @@ class ImageService {
           'MMMM yyyy',
         ).format(groupAssets.first.createDateTime);
         final imageIds = groupAssets.map((e) => e.id).toList();
-        await DatabaseService.updateStory(title: title, newImageIds: imageIds);
+        await DatabaseService.updateStory(title: title, newImageIds: imageIds, coverImageId: imageIds.first);
       }
      
          }

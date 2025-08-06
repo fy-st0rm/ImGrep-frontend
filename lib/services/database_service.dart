@@ -320,6 +320,7 @@ class DatabaseService {
 static Future<void> updateStory({
   required String title,
   required List<String> newImageIds,
+  required String coverImageId
 }) async {
   final db = await database;
 
@@ -336,11 +337,17 @@ static Future<void> updateStory({
   final existingImageIds = (jsonDecode(result[0]['image_ids']) as List<dynamic>)
       .cast<String>();
 
-  final updatedImageIds = {...newImageIds,...existingImageIds}.toList();
+  final updatedImageIds = {...newImageIds, ...existingImageIds}.toList();
 
   await db.update(
     'stories',
     {'image_ids': jsonEncode(updatedImageIds)},
+    where: 'title = ?',
+    whereArgs: [title],
+  );
+    await db.update(
+    'stories',
+    {'cover_image_id': coverImageId},
     where: 'title = ?',
     whereArgs: [title],
   );
