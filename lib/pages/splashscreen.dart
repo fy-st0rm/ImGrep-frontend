@@ -19,7 +19,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    ImageService.init();
+    ImageService.incrementalSync();
     ImageService.syncProgressNotifier.addListener(() {
       setState(() {
         _progress = ImageService.syncProgressNotifier.value;

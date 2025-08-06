@@ -93,8 +93,6 @@ class ImageService {
       );
       return;
     }
-    await incrementalSync();
-
     ImageService._listen();
   }
 
