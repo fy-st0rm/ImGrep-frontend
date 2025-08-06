@@ -197,8 +197,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 borderRadius: BorderRadius.circular(15),
               ),
               child: IconButton(
-                onPressed: () {},
-                icon: SvgPicture.asset('assets/icons/VoiceSearch.svg'),
+                 onPressed: _pickImage,
+                  icon: Icon(Icons.image, color: Colors.white),
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(),
               ),
             ),
 
@@ -285,12 +287,6 @@ class _SearchScreenState extends State<SearchScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          IconButton(
-                            onPressed: _pickImage,
-                            icon: Icon(Icons.image, color: Colors.white),
-                            padding: EdgeInsets.zero,
-                            constraints: BoxConstraints(),
-                          ),
                           IconButton(
                             onPressed: _search,
                             icon: SvgPicture.asset('assets/icons/SendIcon.svg'),
