@@ -92,7 +92,12 @@ class ImageService {
         "Photo permission denied, Stoping further initialization of ImageService",
       );
       return;
+<<<<<<< Updated upstream
     }
+=======
+  }
+
+>>>>>>> Stashed changes
     ImageService._listen();
   }
 
@@ -318,6 +323,31 @@ class ImageService {
 
         await DatabaseService.insertImage(asset);
       }
+      final Map<String, List<AssetEntity>> groups = {};
+    for (final img in recentAssets) {
+      final date = img.createDateTime;
+      final id = DateFormat('yyyy-MM').format(date);
+      groups.putIfAbsent(id, () => []).add(img);
+    }
+
+    for (final entry in groups.entries) {
+      final List<AssetEntity> groupAssets = entry.value;
+      final title = DateFormat(
+        'MMMM yyyy',
+      ).format(groupAssets.first.createDateTime);
+      final imageIds = groupAssets.map((e) => e.id).toList();
+      final coverId = imageIds.first;
+      final description = generateStoryDescription(title, imageIds.length);
+
+      await DatabaseService.insertStory(
+        id: entry.key,
+        title: title,
+        description: description,
+        imageIds: imageIds,
+        coverImageId: coverId,
+        createdAt: groupAssets.first.createDateTime,
+      );
+    }
     }
 
     // Update last synced timestamp
